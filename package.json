@@ -1,0 +1,47 @@
+{
+  "name": "inspection-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2",
+    "@mui/icons-material": "^5.x.x",
+    "@mui/material": "^5.x.x",
+    "@mui/x-date-pickers": "^7.23.6",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "audio-recorder-polyfill": "^0.4.1",
+    "axios": "^1.6.7",
+    "date-fns": "^2.30.0",
+    "lamejs": "^1.2.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-material-ui-carousel": "^3.4.2",
+    "react-router-dom": "^6.22.1",
+    "react-scripts": "5.0.1",
+    "react-signature-canvas": "^1.0.7",
+    "react-slick": "^0.30.3",
+    "slick-carousel": "^1.8.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
