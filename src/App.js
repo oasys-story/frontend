@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { createTheme } from '@mui/material/styles';
+import theme from './theme';
 import { Box } from '@mui/material';
 import InspectionForm from './components/inspection/InspectionForm';
 import InspectionResult from './components/inspection/InspectionResult';
@@ -21,8 +21,6 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import InspectionHome from './components/inspection/InspectionHome';
 import { StyledEngineProvider } from '@mui/material/styles';
-
-const theme = createTheme();
 
 function App() {
   return (

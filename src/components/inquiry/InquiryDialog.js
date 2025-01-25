@@ -672,35 +672,73 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
               <Divider sx={{ my: 2 }} />
 
               <Box sx={{ mb: 2 }}>
-                <Typography Typography 
-                variant="subtitle2" 
-                sx={{ 
-                  mb: 1,
-                  color: 'text.secondary',
-                  fontWeight: 500,
-                  fontSize: '0.875rem',
-                  letterSpacing: '0.01em'
-                }} gutterBottom>
-                  처리상태: {inquiry.processed ? "처리완료" : "미처리"}
-                </Typography>
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center',
+                  mb: 2 
+                }}>
+                  <Typography 
+                    variant="subtitle2" 
+                    sx={{ 
+                      color: 'text.secondary',
+                      fontWeight: 500,
+                      fontSize: '0.875rem',
+                      letterSpacing: '0.01em'
+                    }}
+                  >
+                    처리상태:{' '}
+                  </Typography>
+                  <Typography 
+                    component="span" 
+                    sx={{ 
+                      ml: 1,
+                      fontSize: '0.8rem',
+                      color: inquiry.processed ? '#4caf50' : '#ff9800',
+                      bgcolor: inquiry.processed ? 'rgba(76, 175, 80, 0.1)' : 'rgba(255, 152, 0, 0.1)',
+                      px: 1,
+                      py: 0.3,
+                      borderRadius: '4px',
+                      display: 'inline-flex',
+                      alignItems: 'center'
+                    }}
+                  >
+                    {inquiry.processed ? "처리완료" : "미처리"}
+                  </Typography>
+                </Box>
+
                 {inquiry.processed && (
-                  <Box sx={{ bgcolor: '#e3f2fd', p: 2, borderRadius: 1 }}>
+                  <Box sx={{ 
+                    bgcolor: 'rgba(76, 175, 80, 0.05)',
+                    border: '1px solid rgba(76, 175, 80, 0.2)', 
+                    p: 2.5, 
+                    borderRadius: 1 
+                  }}>
                     {inquiry.processContent && (
                       <>
                         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                           처리내용
                         </Typography>
-                        <Typography variant="body2" sx={{ mb: 2, whiteSpace: 'pre-wrap' }}>
+                        <Typography variant="body2" sx={{ 
+                          mb: 2, 
+                          whiteSpace: 'pre-wrap',
+                          fontSize: '0.9rem',
+                          lineHeight: 1.8
+                        }}>
                           {inquiry.processContent}
                         </Typography>
                       </>
                     )}
                     {inquiry.memo && (
                       <>
+                        <Divider sx={{ my: 2, opacity: 0.2 }} />
                         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                           메모
                         </Typography>
-                        <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                        <Typography variant="body2" sx={{ 
+                          whiteSpace: 'pre-wrap',
+                          fontSize: '0.9rem',
+                          lineHeight: 1.8
+                        }}>
                           {inquiry.memo}
                         </Typography>
                       </>
