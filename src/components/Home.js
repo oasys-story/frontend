@@ -33,7 +33,6 @@ const Home = () => {
       title: "24시간 모니터링",
       description: "실시간 안전 점검"
     },
-    // 추가 아이템...
   ];
 
   useEffect(() => {
