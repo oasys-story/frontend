@@ -1,11 +1,10 @@
 import React from 'react';
-import { Box, Container, Typography, Paper, Grid, AppBar, Toolbar } from '@mui/material';
+import { Box, Container, Typography, Paper, Grid } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import ElectricBoltIcon from '@mui/icons-material/ElectricBolt';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import SecurityIcon from '@mui/icons-material/Security';
 import EngineeringIcon from '@mui/icons-material/Engineering';
-import BuildIcon from '@mui/icons-material/Build';
 
 const InspectionHome = () => {
   const navigate = useNavigate();
