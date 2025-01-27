@@ -16,7 +16,6 @@ import {
 import { useNavigate } from 'react-router-dom';
 import Carousel from 'react-material-ui-carousel';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import NoticeDetail from './notice/NoticeDetail';
 import NoticeDetailModal from './notice/NoticeDetailModal';
 import InquiryDetailModal from './inquiry/InquiryDetailModal';
 
