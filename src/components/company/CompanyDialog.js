@@ -10,35 +10,33 @@ import {
 } from '@mui/material';
 
 const CompanyDialog = ({ open, onClose, onSubmit }) => {
-  const [formData, setFormData] = useState({
+  const initialState = {
     companyName: '',
     phoneNumber: '',
     faxNumber: '',
-    notes: ''
-  });
+    address: '',
+    active: true
+  };
+
+  const [companyData, setCompanyData] = useState(initialState);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setCompanyData(prev => ({
       ...prev,
       [name]: value
     }));
   };
 
-  const handleSubmit = () => {
-    onSubmit(formData);
-    setFormData({
-      companyName: '',
-      phoneNumber: '',
-      faxNumber: '',
-      notes: ''
-    });
+  const handleClose = () => {
+    setCompanyData(initialState);
+    onClose();
   };
 
   return (
     <Dialog 
       open={open} 
-      onClose={onClose}
+      onClose={handleClose}
       fullWidth
       maxWidth="sm"
     >
@@ -52,7 +50,7 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
             fullWidth
             label="업체명"
             name="companyName"
-            value={formData.companyName}
+            value={companyData.companyName}
             onChange={handleChange}
             sx={{ mb: 2 }}
           />
@@ -61,7 +59,7 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
             fullWidth
             label="연락처"
             name="phoneNumber"
-            value={formData.phoneNumber}
+            value={companyData.phoneNumber}
             onChange={handleChange}
             placeholder="010-0000-0000"
             sx={{ mb: 2 }}
@@ -71,16 +69,16 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
             fullWidth
             label="FAX"
             name="faxNumber"
-            value={formData.faxNumber}
+            value={companyData.faxNumber}
             onChange={handleChange}
             sx={{ mb: 2 }}
           />
           
           <TextField
             fullWidth
-            label="비고"
-            name="notes"
-            value={formData.notes}
+            label="주소"
+            name="address"
+            value={companyData.address}
             onChange={handleChange}
             multiline
             rows={4}
@@ -91,7 +89,7 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
 
       <DialogActions sx={{ p: 2, pt: 0 }}>
         <Button 
-          onClick={onClose}
+          onClick={handleClose}
           variant="outlined"
           fullWidth
           sx={{ mr: 1 }}
@@ -99,7 +97,7 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
           취소
         </Button>
         <Button 
-          onClick={handleSubmit}
+          onClick={() => onSubmit(companyData)}
           variant="contained"
           fullWidth
           sx={{

@@ -113,7 +113,6 @@ const InquiryDetailModal = ({ open, inquiry, onClose }) => {
             </Typography>
           </Box>
 
-          <Divider sx={{ mb: 3 }} />
 
           <Box sx={{ mb: 3 }}>
             <SectionTitle>문의 내용</SectionTitle>

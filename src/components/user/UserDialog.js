@@ -15,17 +15,18 @@ import {
 } from '@mui/material';
 
 const UserDialog = ({ open, onClose }) => {
-  const [formData, setFormData] = useState({
+  const initialState = {
     username: '',
     password: '',
-    passwordConfirm: '',
     fullName: '',
-    phoneNumber: '',
     email: '',
+    phoneNumber: '',
     companyId: '',
-    role: 'MANAGER'
-  });
-  
+    role: 'USER',
+    active: true
+  };
+
+  const [userData, setUserData] = useState(initialState);
   const [companies, setCompanies] = useState([]);
   const [error, setError] = useState('');
   const [isIdAvailable, setIsIdAvailable] = useState(true);
@@ -55,7 +56,7 @@ const UserDialog = ({ open, onClose }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setUserData(prev => ({
       ...prev,
       [name]: value
     }));
@@ -67,19 +68,19 @@ const UserDialog = ({ open, onClose }) => {
 
     // 비밀번호 확인 체크
     if (name === 'password' || name === 'passwordConfirm') {
-      const otherField = name === 'password' ? formData.passwordConfirm : formData.password;
+      const otherField = name === 'password' ? userData.passwordConfirm : userData.password;
       setPasswordMatch(value === otherField || value === '');
     }
   };
 
   const checkUsername = async () => {
-    if (!formData.username) {
+    if (!userData.username) {
       setError('아이디를 입력해주세요.');
       return;
     }
 
     try {
-      const response = await fetch(`http://localhost:8080/api/auth/check-username?username=${formData.username}`);
+      const response = await fetch(`http://localhost:8080/api/auth/check-username?username=${userData.username}`);
       const message = await response.text();
       
       if (response.ok) {
@@ -106,12 +107,12 @@ const UserDialog = ({ open, onClose }) => {
 
   const handleSubmit = async () => {
     // 유효성 검사
-    if (!formData.username || !formData.password || !formData.fullName) {
+    if (!userData.username || !userData.password || !userData.fullName) {
       setError('필수 항목을 모두 입력해주세요.');
       return;
     }
 
-    if (!passwordMatch || formData.password !== formData.passwordConfirm) {
+    if (!passwordMatch || userData.password !== userData.passwordConfirm) {
       setError('비밀번호가 일치하지 않습니다.');
       return;
     }
@@ -122,7 +123,7 @@ const UserDialog = ({ open, onClose }) => {
     }
 
     // API 호출 전 passwordConfirm 제거
-    const submitData = { ...formData };
+    const submitData = { ...userData };
     delete submitData.passwordConfirm;
 
     try {
@@ -145,8 +146,14 @@ const UserDialog = ({ open, onClose }) => {
     }
   };
 
+  // 다이얼로그 닫기 핸들러
+  const handleClose = () => {
+    setUserData(initialState); // 입력 필드 초기화
+    onClose();
+  };
+
   return (
-    <Dialog open={open} onClose={() => onClose(false)} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ textAlign: 'center' }}>사용자 추가</DialogTitle>
       <DialogContent>
         <Box sx={{ pt: 2 }}>
@@ -166,7 +173,7 @@ const UserDialog = ({ open, onClose }) => {
               fullWidth
               label="아이디"
               name="username"
-              value={formData.username}
+              value={userData.username}
               onChange={handleChange}
               error={!isIdAvailable}
             />
@@ -204,7 +211,7 @@ const UserDialog = ({ open, onClose }) => {
             label="비밀번호"
             name="password"
             type="password"
-            value={formData.password}
+            value={userData.password}
             onChange={handleChange}
             error={!passwordMatch}
             sx={{ mb: 2 }}
@@ -215,7 +222,7 @@ const UserDialog = ({ open, onClose }) => {
             label="비밀번호 확인"
             name="passwordConfirm"
             type="password"
-            value={formData.passwordConfirm}
+            value={userData.passwordConfirm}
             onChange={handleChange}
             error={!passwordMatch}
             helperText={!passwordMatch ? "비밀번호가 일치하지 않습니다" : ""}
@@ -226,7 +233,7 @@ const UserDialog = ({ open, onClose }) => {
             fullWidth
             label="이름"
             name="fullName"
-            value={formData.fullName}
+            value={userData.fullName}
             onChange={handleChange}
             sx={{ mb: 2 }}
           />
@@ -234,7 +241,7 @@ const UserDialog = ({ open, onClose }) => {
             fullWidth
             label="전화번호"
             name="phoneNumber"
-            value={formData.phoneNumber}
+            value={userData.phoneNumber}
             onChange={handleChange}
             placeholder="010-0000-0000"
             sx={{ mb: 2 }}
@@ -244,7 +251,7 @@ const UserDialog = ({ open, onClose }) => {
             label="이메일"
             name="email"
             type="email"
-            value={formData.email}
+            value={userData.email}
             onChange={handleChange}
             sx={{ mb: 2 }}
           />
@@ -252,7 +259,7 @@ const UserDialog = ({ open, onClose }) => {
             <InputLabel>소속 업체</InputLabel>
             <Select
               name="companyId"
-              value={formData.companyId}
+              value={userData.companyId}
               label="소속 업체"
               onChange={handleChange}
             >
@@ -266,7 +273,7 @@ const UserDialog = ({ open, onClose }) => {
         </Box>
       </DialogContent>
       <DialogActions sx={{ p: 2, pt: 0 }}>
-        <Button onClick={() => onClose(false)} fullWidth variant="outlined">
+        <Button onClick={handleClose} fullWidth variant="outlined">
           취소
         </Button>
         <Button 

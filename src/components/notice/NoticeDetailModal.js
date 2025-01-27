@@ -109,7 +109,6 @@ const NoticeDetailModal = ({ open, notice, onClose }) => {
             </Typography>
           </Box>
 
-          <Divider sx={{ mb: 3 }} />
 
           <Box sx={{ mb: 3 }}>
             <SectionTitle>공지 내용</SectionTitle>
