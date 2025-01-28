@@ -209,6 +209,9 @@ const InspectionForm = () => {
 
       const response = await fetch('http://localhost:8080/api/inspections', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}` // 토큰 추가
+        },
         body: formDataObj
       });
 

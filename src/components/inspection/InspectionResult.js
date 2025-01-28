@@ -60,7 +60,11 @@ const InspectionResult = () => {
     const fetchInspectionDetail = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`http://localhost:8080/api/inspections/${id}/detail`);
+        const response = await fetch(`http://localhost:8080/api/inspections/${id}/detail`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
         if (!response.ok) {
           throw new Error('점검 데이터를 불러오는데 실패했습니다.');
         }
@@ -179,6 +183,35 @@ const InspectionResult = () => {
     }
   };
 
+  // 삭제 핸들러
+  const handleDelete = async () => {
+    if (!hasPermission) {
+      alert('삭제 권한이 없습니다.');
+      return;
+    }
+
+    if (window.confirm('정말 삭제하시겠습니까?')) {
+      try {
+        const response = await fetch(`http://localhost:8080/api/inspections/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        if (response.ok) {
+          alert('점검 기록이 삭제되었습니다.');
+          navigate('/inspections');
+        } else {
+          throw new Error('삭제 실패');
+        }
+      } catch (error) {
+        console.error('Failed to delete inspection:', error);
+        alert('삭제 중 오류가 발생했습니다.');
+      }
+    }
+  };
+
   const ResultSection = ({ title, children }) => ( // 점검 결과 섹션 컴포넌트
     <Box sx={{ mb: 3 }}>
       <Typography 
@@ -240,6 +273,13 @@ const InspectionResult = () => {
     }
   };
 
+  // 권한 체크
+  const currentUserId = localStorage.getItem('userId');
+  
+  // 수정/삭제 권한 체크
+  const hasPermission = isAdmin || (data?.userId === parseInt(currentUserId));
+
+
   return (
     <Box sx={{ 
       minHeight: '100vh', 
@@ -284,6 +324,10 @@ const InspectionResult = () => {
             <Grid item xs={6}>
               <Typography variant="body2" color="text.secondary">점검자</Typography>
               <Typography>{data.managerName}</Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography variant="body2" color="text.secondary">작성자</Typography>
+              <Typography>{data?.username}</Typography>
             </Grid>
           </Grid>
         </Paper>
@@ -583,32 +627,50 @@ const InspectionResult = () => {
         bottom: 0,
         left: 0,
         right: 0,
-        bgcolor: '#FFFFFF',
+        p: 2,
+        bgcolor: 'white',
         borderTop: '1px solid #eee',
-        p: 2
+        display: 'flex',
+        gap: 1,
+        justifyContent: 'center'
       }}>
-        <Grid container spacing={2}>
-          <Grid item xs={6}>
+        <Button
+          variant="outlined"
+          onClick={() => navigate('/inspections')}
+          sx={{ minWidth: '100px' }}
+        >
+          목록
+        </Button>
+        {hasPermission && (
+          <>
             <Button
-              fullWidth
               variant="contained"
-              onClick={handlePdfDownload}
-              startIcon={<PictureAsPdfIcon />}
+              onClick={() => navigate(`/inspection/edit/${id}`)}
+              sx={{ 
+                minWidth: '100px',
+                bgcolor: '#1C243A',
+                '&:hover': { bgcolor: '#3d63b8' }
+              }}
             >
-              PDF 다운로드
+              수정
             </Button>
-          </Grid>
-          <Grid item xs={6}>
             <Button
-              fullWidth
               variant="outlined"
-              onClick={() => navigate('/inspections')}
-              startIcon={<ListIcon />}
+              onClick={handleDelete}
+              sx={{ 
+                minWidth: '100px',
+                color: 'error.main',
+                borderColor: 'error.main',
+                '&:hover': {
+                  backgroundColor: 'error.light',
+                  color: 'white'
+                }
+              }}
             >
-              목록
+              삭제
             </Button>
-          </Grid>
-        </Grid>
+          </>
+        )}
       </Box>
 
       {/* SMS 다이얼로그 */}
