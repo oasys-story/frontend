@@ -40,11 +40,11 @@ import VoiceRecorder from './VoiceRecorder';
 const steps = ['기본 정보', '기본사항', '점검내역', '측정개소', '특이사항'];
 
 /* 점검 폼 컴포넌트 */
-const InspectionForm = () => {
-  const navigate = useNavigate(); // 네비게이션 기능 사용
-  const [activeStep, setActiveStep] = useState(0); // 현재 스탭 상태 관리
+const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = null }) => {
+  const navigate = useNavigate();
+  const [activeStep, setActiveStep] = useState(0);
   const [formData, setFormData] = useState({
-    companyId: '',  // facilityName 대신 companyId로 변경
+    companyId: '',
     inspectionDate: null,
     managerName: '',
     
@@ -89,12 +89,57 @@ const InspectionForm = () => {
     // 특이사항
     specialNotes: ''
   });
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false); // 확인 다이얼로그 상태 관리
-  const [signatureDialogOpen, setSignatureDialogOpen] = useState(false); // 서명 다이얼로그 상태 관리
-  const [signature, setSignature] = useState(null); // 서명 데이터 상태 관리
-  const [companies, setCompanies] = useState([]);  // 회사 목록을 위한 state 추가
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [signatureDialogOpen, setSignatureDialogOpen] = useState(false);
+  const [signature, setSignature] = useState(null);
+  const [companies, setCompanies] = useState([]);
   const [images, setImages] = useState([]);
   const fileInputRef = useRef(null);
+
+  // 수정 모드일 때 초기 데이터 설정
+  useEffect(() => {
+    if (isEdit && initialData) {
+      setFormData({
+        companyId: initialData.companyId,
+        inspectionDate: new Date(initialData.inspectionDate),
+        managerName: initialData.managerName,
+        faucetVoltage: initialData.faucetVoltage,
+        faucetCapacity: initialData.faucetCapacity,
+        generationVoltage: initialData.generationVoltage,
+        generationCapacity: initialData.generationCapacity,
+        solarCapacity: initialData.solarCapacity,
+        contractCapacity: initialData.contractCapacity,
+        inspectionType: initialData.inspectionType,
+        inspectionCount: initialData.inspectionCount,
+        wiringInlet: initialData.wiringInlet,
+        distributionPanel: initialData.distributionPanel,
+        moldedCaseBreaker: initialData.moldedCaseBreaker,
+        earthLeakageBreaker: initialData.earthLeakageBreaker,
+        switchGear: initialData.switchGear,
+        wiring: initialData.wiring,
+        motor: initialData.motor,
+        heatingEquipment: initialData.heatingEquipment,
+        welder: initialData.welder,
+        capacitor: initialData.capacitor,
+        lighting: initialData.lighting,
+        grounding: initialData.grounding,
+        internalWiring: initialData.internalWiring,
+        generator: initialData.generator,
+        otherEquipment: initialData.otherEquipment,
+        measurements: initialData.measurements,
+        specialNotes: initialData.specialNotes
+      });
+
+      // 이미지가 있다면 설정
+      if (initialData.images && initialData.images.length > 0) {
+        setImages(initialData.images.map(imageName => ({
+          preview: `http://localhost:8080/uploads/images/${imageName}`,
+          file: null,
+          name: imageName
+        })));
+      }
+    }
+  }, [isEdit, initialData]);
 
   // 회사 목록 불러오기
   useEffect(() => {
@@ -142,7 +187,6 @@ const InspectionForm = () => {
     try {
       const formDataObj = new FormData();
       
-      // 점검 데이터 객체 생성
       const inspectionData = {
         companyId: formData.companyId,
         inspectionDate: formData.inspectionDate ? formData.inspectionDate.toISOString().split('T')[0] : null,
@@ -199,28 +243,41 @@ const InspectionForm = () => {
         signature: signatureData
       };
 
-      // FormData에 inspectionData 추가
       formDataObj.append('inspectionData', JSON.stringify(inspectionData));
       
-      // 이미지 파일들 추가
+      // 이미지 처리
       images.forEach(image => {
-        formDataObj.append('images', image.file);
+        if (image.file) {  // 새로 추가된 이미지만 전송
+          formDataObj.append('images', image.file);
+        }
       });
+      
+      // 기존 이미지 이름들 전송
+      const existingImages = images
+        .filter(image => !image.file)
+        .map(image => image.name);
+      if (existingImages.length > 0) {
+        formDataObj.append('existingImages', JSON.stringify(existingImages));
+      }
 
-      const response = await fetch('http://localhost:8080/api/inspections', {
-        method: 'POST',
+      const url = isEdit 
+        ? `http://localhost:8080/api/inspections/${inspectionId}`
+        : 'http://localhost:8080/api/inspections';
+
+      const response = await fetch(url, {
+        method: isEdit ? 'PUT' : 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}` // 토큰 추가
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: formDataObj
       });
 
       if (!response.ok) {
-        throw new Error('점검 데이터 저장에 실패했습니다.');
+        throw new Error(isEdit ? '점검 데이터 수정에 실패했습니다.' : '점검 데이터 저장에 실패했습니다.');
       }
 
       const result = await response.json();
-      navigate(`/inspection/${result}`);
+      navigate(`/inspection/${isEdit ? inspectionId : result}`);
     } catch (error) {
       console.error('Error:', error);
       alert(error.message);
@@ -306,7 +363,7 @@ const InspectionForm = () => {
             textAlign: 'center'
           }}
         >
-          점검표 작성
+          {isEdit ? '점검 내용 수정' : '점검 시작하기'}
         </Typography>
       </Box>
       <Paper sx={{ p: 2, backgroundColor: '#FFFFFF' }}>

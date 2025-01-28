@@ -21,6 +21,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import InspectionHome from './components/inspection/InspectionHome';
 import { StyledEngineProvider } from '@mui/material/styles';
+import InspectionEdit from './components/inspection/InspectionEdit';
 
 function App() {
   return (
@@ -46,6 +47,7 @@ function App() {
                 <Route path="/inspection/safety" element={<SafetyEducation />} />
                 <Route path="/inspection/new" element={<InspectionForm />} />
                 <Route path="/inspection/:id" element={<InspectionResult />} />
+                <Route path="/inspection/edit/:id" element={<InspectionEdit />} />
                 <Route path="/companies" element={<CompanyList />} />
                 <Route path="/companies/:companyId" element={<CompanyManagement />} />
                 <Route path="/users" element={<UserList />} />
