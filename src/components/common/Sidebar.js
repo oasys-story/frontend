@@ -51,7 +51,7 @@ const Sidebar = () => {
   // 메뉴 아이템 필터링
   const menuItems = [
     { text: '홈', icon: <HomeIcon />, path: '/' },
-    { text: '점검 시작하기', icon: <AssignmentIcon />, path: '/inspection' },
+    { text: '점검 시작하기', icon: <AssignmentIcon />, path: '/inspection', requireAuth: true },
     { text: '점검 목록', path: '/inspections', icon: <ListAltIcon />, requireAuth: true },
     { text: '공지사항', icon: <NotificationsIcon />, path: '/notices' },
     { text: '문의사항', icon: <QuestionAnswerIcon />, path: '/inquiries' },
@@ -163,8 +163,8 @@ const Sidebar = () => {
   };
 
   const handleMenuClick = (item) => {
-    // 점검 목록 접근 시 로그인 체크
-    if (item.path === '/inspections') {
+    // 로그인 필요한 메뉴 체크
+    if (item.requireAuth) {
       const token = localStorage.getItem('token');
       if (!token) {
         setSnackbar({
