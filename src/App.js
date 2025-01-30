@@ -22,6 +22,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import InspectionHome from './components/inspection/InspectionHome';
 import { StyledEngineProvider } from '@mui/material/styles';
 import InspectionEdit from './components/inspection/InspectionEdit';
+import Settings from './components/settings/Settings';
 
 function App() {
   return (
@@ -55,6 +56,7 @@ function App() {
                 <Route path="/inspections" element={<InspectionList />} />
                 <Route path="/notices" element={<NoticeList />} />
                 <Route path="/inquiries" element={<InquiryList />} />
+                <Route path="/settings/*" element={<Settings />}/>
               </Routes>
             </Box>
           </LocalizationProvider>
