@@ -29,6 +29,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import NotificationsIcon from '@mui/icons-material/Notifications';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 const Sidebar = () => {
   const [open, setOpen] = useState(false);
@@ -59,6 +60,12 @@ const Sidebar = () => {
     ...(isAdmin ? [
       { text: '업체 관리', icon: <BusinessIcon />, path: '/companies' },
       { text: '사용자 관리', icon: <PeopleIcon />, path: '/users' },
+      {
+        icon: <SettingsIcon />,
+        text: '설정',
+        path: '/settings/dashboard',  // 설정의 대시보드로 바로 이동
+        roles: ['ADMIN']
+      }
     ] : [])
   ];
 
