@@ -1,28 +1,44 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import theme from './theme';
-import { Box } from '@mui/material';
-import InspectionForm from './components/inspection/InspectionForm';
-import InspectionResult from './components/inspection/InspectionResult';
-import MainHome from './components/Home';
-import SafetyEducation from './components/safety/SafetyEducation';
+import { Box, CircularProgress } from '@mui/material';
 import Sidebar from './components/common/Sidebar';
-import CompanyList from './components/company/CompanyList';
-import UserList from './components/user/UserList';
-import UserManagement from './pages/UserManagement';
-import CompanyManagement from './pages/CompanyManagement';
-import InspectionList from './components/inspection/InspectionList';
-import NoticeList from './components/notice/NoticeList';
-import InquiryList from './components/inquiry/InquiryList';
+import MainHome from './components/Home';
 import './App.css';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import InspectionHome from './components/inspection/InspectionHome';
 import { StyledEngineProvider } from '@mui/material/styles';
-import InspectionEdit from './components/inspection/InspectionEdit';
-import Settings from './components/settings/Settings';
+
+// 지연 로딩할 컴포넌트들
+const Settings = React.lazy(() => import('./components/settings/Settings'));
+const InspectionForm = React.lazy(() => import('./components/inspection/InspectionForm'));
+const InspectionResult = React.lazy(() => import('./components/inspection/InspectionResult'));
+const InspectionEdit = React.lazy(() => import('./components/inspection/InspectionEdit'));
+const SafetyEducation = React.lazy(() => import('./components/safety/SafetyEducation'));
+const CompanyList = React.lazy(() => import('./components/company/CompanyList'));
+const UserList = React.lazy(() => import('./components/user/UserList'));
+const UserManagement = React.lazy(() => import('./pages/UserManagement'));
+const CompanyManagement = React.lazy(() => import('./pages/CompanyManagement'));
+const InspectionList = React.lazy(() => import('./components/inspection/InspectionList'));
+const NoticeList = React.lazy(() => import('./components/notice/NoticeList'));
+const InquiryList = React.lazy(() => import('./components/inquiry/InquiryList'));
+const InspectionHome = React.lazy(() => import('./components/inspection/InspectionHome'));
+
+// 로딩 컴포넌트
+const LoadingFallback = () => (
+  <Box 
+    sx={{ 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center',
+      height: '100vh'
+    }}
+  >
+    <CircularProgress />
+  </Box>
+);
 
 function App() {
   return (
@@ -42,22 +58,24 @@ function App() {
               }}
             >
               <Sidebar />
-              <Routes>
-                <Route path="/" element={<MainHome />} />
-                <Route path="/inspection" element={<InspectionHome />} />
-                <Route path="/inspection/safety" element={<SafetyEducation />} />
-                <Route path="/inspection/new" element={<InspectionForm />} />
-                <Route path="/inspection/:id" element={<InspectionResult />} />
-                <Route path="/inspection/edit/:id" element={<InspectionEdit />} />
-                <Route path="/companies" element={<CompanyList />} />
-                <Route path="/companies/:companyId" element={<CompanyManagement />} />
-                <Route path="/users" element={<UserList />} />
-                <Route path="/users/:userId" element={<UserManagement />} />
-                <Route path="/inspections" element={<InspectionList />} />
-                <Route path="/notices" element={<NoticeList />} />
-                <Route path="/inquiries" element={<InquiryList />} />
-                <Route path="/settings/*" element={<Settings />}/>
-              </Routes>
+              <Suspense fallback={<LoadingFallback />}>
+                <Routes>
+                  <Route path="/" element={<MainHome />} />
+                  <Route path="/inspection" element={<InspectionHome />} />
+                  <Route path="/inspection/safety" element={<SafetyEducation />} />
+                  <Route path="/inspection/new" element={<InspectionForm />} />
+                  <Route path="/inspection/:id" element={<InspectionResult />} />
+                  <Route path="/inspection/edit/:id" element={<InspectionEdit />} />
+                  <Route path="/companies" element={<CompanyList />} />
+                  <Route path="/companies/:companyId" element={<CompanyManagement />} />
+                  <Route path="/users" element={<UserList />} />
+                  <Route path="/users/:userId" element={<UserManagement />} />
+                  <Route path="/inspections" element={<InspectionList />} />
+                  <Route path="/notices" element={<NoticeList />} />
+                  <Route path="/inquiries" element={<InquiryList />} />
+                  <Route path="/settings/*" element={<Settings />}/>
+                </Routes>
+              </Suspense>
             </Box>
           </LocalizationProvider>
         </ThemeProvider>
