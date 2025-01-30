@@ -100,42 +100,56 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
   useEffect(() => {
     if (isEdit && initialData) {
       setFormData({
-        companyId: initialData.companyId,
-        inspectionDate: new Date(initialData.inspectionDate),
-        managerName: initialData.managerName,
-        faucetVoltage: initialData.faucetVoltage,
-        faucetCapacity: initialData.faucetCapacity,
-        generationVoltage: initialData.generationVoltage,
-        generationCapacity: initialData.generationCapacity,
-        solarCapacity: initialData.solarCapacity,
-        contractCapacity: initialData.contractCapacity,
-        inspectionType: initialData.inspectionType,
-        inspectionCount: initialData.inspectionCount,
-        wiringInlet: initialData.wiringInlet,
-        distributionPanel: initialData.distributionPanel,
-        moldedCaseBreaker: initialData.moldedCaseBreaker,
-        earthLeakageBreaker: initialData.earthLeakageBreaker,
-        switchGear: initialData.switchGear,
-        wiring: initialData.wiring,
-        motor: initialData.motor,
-        heatingEquipment: initialData.heatingEquipment,
-        welder: initialData.welder,
-        capacitor: initialData.capacitor,
-        lighting: initialData.lighting,
-        grounding: initialData.grounding,
-        internalWiring: initialData.internalWiring,
-        generator: initialData.generator,
-        otherEquipment: initialData.otherEquipment,
-        measurements: initialData.measurements,
-        specialNotes: initialData.specialNotes
+        companyId: initialData.companyId || '',
+        inspectionDate: initialData.inspectionDate ? new Date(initialData.inspectionDate) : null,
+        managerName: initialData.managerName || '',
+        faucetVoltage: initialData.faucetVoltage || '',
+        faucetCapacity: initialData.faucetCapacity || '',
+        generationVoltage: initialData.generationVoltage || '',
+        generationCapacity: initialData.generationCapacity || '',
+        solarCapacity: initialData.solarCapacity || '',
+        contractCapacity: initialData.contractCapacity || '',
+        inspectionType: initialData.inspectionType || '',
+        inspectionCount: initialData.inspectionCount || '',
+        wiringInlet: initialData.wiringInlet || '',
+        distributionPanel: initialData.distributionPanel || '',
+        moldedCaseBreaker: initialData.moldedCaseBreaker || '',
+        earthLeakageBreaker: initialData.earthLeakageBreaker || '',
+        switchGear: initialData.switchGear || '',
+        wiring: initialData.wiring || '',
+        motor: initialData.motor || '',
+        heatingEquipment: initialData.heatingEquipment || '',
+        welder: initialData.welder || '',
+        capacitor: initialData.capacitor || '',
+        lighting: initialData.lighting || '',
+        grounding: initialData.grounding || '',
+        internalWiring: initialData.internalWiring || '',
+        generator: initialData.generator || '',
+        otherEquipment: initialData.otherEquipment || '',
+        measurements: initialData.measurements.map(m => ({
+          measurementNumber: m.measurementNumber,
+          voltageA: m.voltageA || '',
+          currentA: m.currentA || '',
+          temperatureA: m.temperatureA || '',
+          voltageB: m.voltageB || '',
+          currentB: m.currentB || '',
+          temperatureB: m.temperatureB || '',
+          voltageC: m.voltageC || '',
+          currentC: m.currentC || '',
+          temperatureC: m.temperatureC || '',
+          voltageN: m.voltageN || '',
+          currentN: m.currentN || '',
+          temperatureN: m.temperatureN || ''
+        })),
+        specialNotes: initialData.specialNotes || ''
       });
 
       // 이미지가 있다면 설정
       if (initialData.images && initialData.images.length > 0) {
         setImages(initialData.images.map(imageName => ({
           preview: `http://localhost:8080/uploads/images/${imageName}`,
-          file: null,
-          name: imageName
+          name: imageName,
+          isNew: false  // 기존 이미지 표시
         })));
       }
     }
@@ -188,81 +202,47 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
       const formDataObj = new FormData();
       
       const inspectionData = {
-        companyId: formData.companyId,
-        inspectionDate: formData.inspectionDate ? formData.inspectionDate.toISOString().split('T')[0] : null,
-        managerName: formData.managerName,
-        
-        // 기본사항
-        faucetVoltage: formData.faucetVoltage || null,
-        faucetCapacity: formData.faucetCapacity || null,
-        generationVoltage: formData.generationVoltage || null,
-        generationCapacity: formData.generationCapacity || null,
-        solarCapacity: formData.solarCapacity || null,
-        contractCapacity: formData.contractCapacity || null,
-        inspectionType: formData.inspectionType || '',
-        inspectionCount: formData.inspectionCount || null,
-        
-        // 점검내역
-        wiringInlet: formData.wiringInlet || null,
-        distributionPanel: formData.distributionPanel || null,
-        moldedCaseBreaker: formData.moldedCaseBreaker || null,
-        earthLeakageBreaker: formData.earthLeakageBreaker || null,
-        switchGear: formData.switchGear || null,
-        wiring: formData.wiring || null,
-        motor: formData.motor || null,
-        heatingEquipment: formData.heatingEquipment || null,
-        welder: formData.welder || null,
-        capacitor: formData.capacitor || null,
-        lighting: formData.lighting || null,
-        grounding: formData.grounding || null,
-        internalWiring: formData.internalWiring || null,
-        generator: formData.generator || null,
-        otherEquipment: formData.otherEquipment || null,
-        
-        // 측정개소
+        ...formData,
+        signature: signatureData,
         measurements: formData.measurements.map(m => ({
           measurementNumber: m.measurementNumber,
-          voltageA: parseFloat(m.voltageA) || 0,
-          currentA: parseFloat(m.currentA) || 0,
-          temperatureA: parseFloat(m.temperatureA) || 0,
-          voltageB: parseFloat(m.voltageB) || 0,
-          currentB: parseFloat(m.currentB) || 0,
-          temperatureB: parseFloat(m.temperatureB) || 0,
-          voltageC: parseFloat(m.voltageC) || 0,
-          currentC: parseFloat(m.currentC) || 0,
-          temperatureC: parseFloat(m.temperatureC) || 0,
-          voltageN: parseFloat(m.voltageN) || 0,
-          currentN: parseFloat(m.currentN) || 0,
-          temperatureN: parseFloat(m.temperatureN) || 0
-        })),
-        
-        // 특이사항
-        specialNotes: formData.specialNotes || '',
-        
-        // 서명
-        signature: signatureData
+          voltageA: m.voltageA || '',
+          currentA: m.currentA || '',
+          temperatureA: m.temperatureA || '',
+          voltageB: m.voltageB || '',
+          currentB: m.currentB || '',
+          temperatureB: m.temperatureB || '',
+          voltageC: m.voltageC || '',
+          currentC: m.currentC || '',
+          temperatureC: m.temperatureC || '',
+          voltageN: m.voltageN || '',
+          currentN: m.currentN || '',
+          temperatureN: m.temperatureN || ''
+        }))
       };
 
-      formDataObj.append('inspectionData', JSON.stringify(inspectionData));
-      
       // 이미지 처리
-      images.forEach(image => {
-        if (image.file) {  // 새로 추가된 이미지만 전송
-          formDataObj.append('images', image.file);
-        }
-      });
-      
-      // 기존 이미지 이름들 전송
+      const newImages = images.filter(img => img.isNew && img.file);
       const existingImages = images
-        .filter(image => !image.file)
-        .map(image => image.name);
-      if (existingImages.length > 0) {
-        formDataObj.append('existingImages', JSON.stringify(existingImages));
+        .filter(img => !img.isNew && img.name)
+        .map(img => img.name);
+
+      // inspectionData에 이미지 정보 추가
+      inspectionData.images = existingImages;
+
+      formDataObj.append('inspectionData', JSON.stringify(inspectionData));
+
+      // 새 이미지만 FormData에 추가
+      if (newImages.length > 0) {
+        newImages.forEach(image => {
+          formDataObj.append('images', image.file);
+        });
       }
 
       const url = isEdit 
         ? `http://localhost:8080/api/inspections/${inspectionId}`
         : 'http://localhost:8080/api/inspections';
+
 
       const response = await fetch(url, {
         method: isEdit ? 'PUT' : 'POST',
@@ -273,6 +253,8 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Server Error:', errorText);
         throw new Error(isEdit ? '점검 데이터 수정에 실패했습니다.' : '점검 데이터 저장에 실패했습니다.');
       }
 
@@ -320,6 +302,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
     });
   };
 
+  // 이미지 업로드 핸들러
   const handleImageUpload = (event) => {
     const files = Array.from(event.target.files);
     
@@ -327,16 +310,25 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onload = (e) => {
-          setImages(prev => [...prev, {
-            file: file,
-            preview: e.target.result
-          }]);
+          // 중복 체크 추가
+          const isDuplicate = images.some(img => 
+            img.file && img.file.name === file.name
+          );
+          
+          if (!isDuplicate) {
+            setImages(prev => [...prev, {
+              file: file,
+              preview: e.target.result,
+              isNew: true
+            }]);
+          }
         };
         reader.readAsDataURL(file);
       }
     });
   };
 
+  // 이미지 제거 핸들러
   const handleRemoveImage = (index) => {
     setImages(prev => prev.filter((_, i) => i !== index));
   };

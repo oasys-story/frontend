@@ -25,6 +25,8 @@ import HomeIcon from '@mui/icons-material/Home';
 import ListIcon from '@mui/icons-material/List';
 import SignatureDialog from './SignatureDialog';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import InspectionPDF from './InspectionPdf';
 
 const InspectionResult = () => {
   const { id } = useParams();
@@ -147,36 +149,6 @@ const InspectionResult = () => {
       } else {
         throw new Error('서명 저장에 실패했습니다.');
       }
-    } catch (error) {
-      console.error('Error:', error);
-      alert(error.message);
-    }
-  };
-
-  const handlePdfDownload = async () => {
-    try {
-      const response = await fetch(`http://localhost:8080/api/inspections/${id}/pdf`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/pdf',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('PDF 생성에 실패했습니다.');
-      }
-
-      // PDF 파일 다운로드
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `inspection_${id}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error:', error);
       alert(error.message);
@@ -318,7 +290,7 @@ const InspectionResult = () => {
               <Typography>{data.companyName}</Typography>
             </Grid>
             <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">점검일</Typography>
+              <Typography variant="body2" color="text.secondary">점검일자</Typography>
               <Typography>{new Date(data.inspectionDate).toLocaleDateString()}</Typography>
             </Grid>
             <Grid item xs={6}>
@@ -502,7 +474,7 @@ const InspectionResult = () => {
               첨부 이미지
             </Typography>
             <ImageList sx={{ width: '100%', height: 'auto' }} cols={2} rowHeight={164}>
-              {data.images.map((imageName, index) => (
+              {[...new Set(data.images)].map((imageName, index) => (
                 <ImageListItem 
                   key={index}
                   onClick={() => setSelectedImage(`http://localhost:8080/uploads/images/${imageName}`)}
@@ -516,6 +488,10 @@ const InspectionResult = () => {
                       height: '100%', 
                       objectFit: 'cover',
                       borderRadius: '4px'
+                    }}
+                    onError={(e) => {
+                      console.error('Failed to load image:', imageName);
+                      e.target.src = '/placeholder-image.png';
                     }}
                   />
                 </ImageListItem>
@@ -543,8 +519,8 @@ const InspectionResult = () => {
                 <Box
                   component="img"
                   src={data.signature.startsWith('data:') 
-                    ? data.signature  // Base64 데이터인 경우 직접 사용
-                    : `http://localhost:8080/uploads/signatures/${data.signature}`  // 파일 경로인 경우
+                    ? data.signature
+                    : `http://localhost:8080/uploads/signatures/${data.signature}`
                   }
                   alt="점검자 서명"
                   sx={{
@@ -619,6 +595,46 @@ const InspectionResult = () => {
             </Grid>
           </Grid>
         </Paper>
+
+        {/* PDF 다운로드 버튼 */}
+        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+          <PDFDownloadLink 
+            document={
+              <InspectionPDF 
+                data={data} 
+                checklistLabels={checklistLabels}
+                getStatusText={getStatusText}
+              />
+            } 
+            fileName={`inspection_${id}.pdf`}
+            style={{ textDecoration: 'none' }}
+          >
+            {({ blob, url, loading, error }) => 
+              loading ? (
+                <Button
+                  variant="contained"
+                  disabled
+                  startIcon={<CircularProgress size={20} />}
+                  sx={{ minWidth: '200px' }}
+                >
+                  PDF 생성중...
+                </Button>
+              ) : (
+                <Button
+                  variant="contained"
+                  startIcon={<PictureAsPdfIcon />}
+                  sx={{ 
+                    minWidth: '200px',
+                    bgcolor: '#1C243A',
+                    '&:hover': { bgcolor: '#3d63b8' }
+                  }}
+                >
+                  PDF 다운로드
+                </Button>
+              )
+            }
+          </PDFDownloadLink>
+        </Box>
       </Box>
 
       {/* 하단 버튼 */}
@@ -710,22 +726,22 @@ const InspectionResult = () => {
         onConfirm={handleManagerSignature}
       />
 
-      {/* 이미지 확대 다이얼로그 추가 */}
+      {/* 이미지 상세보기 모달 */}
       <Dialog
-        open={Boolean(selectedImage)}
+        open={!!selectedImage}
         onClose={() => setSelectedImage(null)}
         maxWidth="md"
         fullWidth
       >
-        <DialogContent sx={{ p: 1 }}>
+        <DialogContent sx={{ p: 0 }}>
           {selectedImage && (
             <img
               src={selectedImage}
-              alt="확대된 이미지"
-              style={{
-                width: '100%',
-                height: 'auto',
-                objectFit: 'contain'
+              alt="상세 이미지"
+              style={{ width: '100%', height: 'auto' }}
+              onError={(e) => {
+                console.error('Failed to load large image:', selectedImage);
+                e.target.src = '/placeholder-image.png';
               }}
             />
           )}
