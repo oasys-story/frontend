@@ -46,25 +46,27 @@ const Sidebar = () => {
   });
   const navigate = useNavigate();
 
-  // 사용자 권한 확인
-  const isAdmin = localStorage.getItem('role')?.toUpperCase() === 'ADMIN';
+  // 사용자 권한 확인 (ADMIN, MANAGER, USER)
+  const userRole = localStorage.getItem('role')?.toUpperCase();
+  const isAdminOrManager = userRole === 'ADMIN' || userRole === 'MANAGER';
 
   // 메뉴 아이템 필터링
   const menuItems = [
+    // 모든 사용자가 볼 수 있는 메뉴
     { text: '홈', icon: <HomeIcon />, path: '/' },
     { text: '점검 시작하기', icon: <AssignmentIcon />, path: '/inspection', requireAuth: true },
     { text: '점검 목록', path: '/inspections', icon: <ListAltIcon />, requireAuth: true },
     { text: '공지사항', icon: <NotificationsIcon />, path: '/notices' },
     { text: '문의사항', icon: <QuestionAnswerIcon />, path: '/inquiries' },
-    // ADMIN 전용 메뉴
-    ...(isAdmin ? [
+
+    // ADMIN과 MANAGER만 볼 수 있는 메뉴
+    ...(isAdminOrManager ? [
       { text: '업체 관리', icon: <BusinessIcon />, path: '/companies' },
       { text: '사용자 관리', icon: <PeopleIcon />, path: '/users' },
       {
         icon: <SettingsIcon />,
         text: '설정',
-        path: '/settings/dashboard',  // 설정의 대시보드로 바로 이동
-        roles: ['ADMIN']
+        path: '/settings/dashboard',
       }
     ] : [])
   ];
@@ -230,18 +232,13 @@ const Sidebar = () => {
   return (
     <>
       <IconButton
-        edge="start"
-        color="inherit"
-        aria-label="menu"
         onClick={toggleDrawer(true)}
-        sx={{ 
+        sx={{
           position: 'fixed',
-          left: 16,
           top: 16,
-          zIndex: 1200,
-          '& .MuiSvgIcon-root': {
-            color: '#2A2A2A'
-          }
+          left: 16,
+          zIndex: 1000,
+          color: '#1C243A'
         }}
       >
         <MenuIcon />

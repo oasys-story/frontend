@@ -202,6 +202,7 @@ const UserManagement = () => {
               >
                 <MenuItem value="ADMIN">관리자</MenuItem>
                 <MenuItem value="MANAGER">업체담당자</MenuItem>
+                <MenuItem value="USER">사용자</MenuItem>
               </Select>
             </FormControl>
             

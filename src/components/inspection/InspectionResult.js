@@ -550,7 +550,7 @@ const InspectionResult = () => {
             
             {/* 관리자 서명 */}
             <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">관리자 서명</Typography>
+              <Typography variant="body2" color="text.secondary">업체 서명</Typography>
               {data.managerSignature ? (
                 <Box
                   component="img"
@@ -558,7 +558,7 @@ const InspectionResult = () => {
                     ? data.managerSignature
                     : `http://localhost:8080/uploads/signatures/${data.managerSignature}`
                   }
-                  alt="관리자 서명"
+                  alt="업체 서명"
                   sx={{
                     width: '100%',
                     height: '100px',
@@ -570,7 +570,11 @@ const InspectionResult = () => {
                 />
               ) : (
                 <Box
-                  onClick={() => isAdmin ? setSignatureDialogOpen(true) : alert('관리자만 서명할 수 있습니다.')}
+                  onClick={() => 
+                    localStorage.getItem('role') === 'USER' 
+                      ? setSignatureDialogOpen(true) 
+                      : alert('점검대상업체만 서명할 수 있습니다.')
+                  }
                   sx={{ 
                     width: '100%', 
                     height: '100px', 
@@ -580,15 +584,15 @@ const InspectionResult = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    cursor: isAdmin ? 'pointer' : 'not-allowed',
-                    opacity: isAdmin ? 1 : 0.6,
+                    cursor: localStorage.getItem('role') === 'USER' ? 'pointer' : 'not-allowed',
+                    opacity: localStorage.getItem('role') === 'USER' ? 1 : 0.6,
                     '&:hover': {
-                      bgcolor: isAdmin ? 'rgba(28, 36, 58, 0.04)' : undefined
+                      bgcolor: localStorage.getItem('role') === 'USER' ? 'rgba(28, 36, 58, 0.04)' : undefined
                     }
                   }}
                 >
                   <Typography color="primary">
-                    {isAdmin ? '서명하기' : '관리자 전용'}
+                    {localStorage.getItem('role') === 'USER' ? '서명하기' : '점검대상업체 전용'}
                   </Typography>
                 </Box>
               )}
