@@ -237,7 +237,7 @@ const Sidebar = () => {
           position: 'fixed',
           top: 16,
           left: 16,
-          zIndex: 1000,
+          zIndex: 1200,
           color: '#1C243A'
         }}
       >

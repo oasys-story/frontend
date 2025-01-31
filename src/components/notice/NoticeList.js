@@ -48,7 +48,7 @@ const NoticeList = () => {
     popupEndDate: null,
     images: []
   });
-  const itemsPerPage = 10;
+  const itemsPerPage = 5;
   const navigate = useNavigate();
   const [selectedNotice, setSelectedNotice] = useState(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -82,14 +82,18 @@ const NoticeList = () => {
 
   const fetchNotices = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/notices');
+      const response = await fetch('http://localhost:8080/api/notices', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setNotices(data);
         setFilteredNotices(data);
       }
     } catch (error) {
-      console.error('공지사항 목록 로딩 실패:', error);
+      console.error('Failed to fetch notices:', error);
     }
   };
 
@@ -205,6 +209,11 @@ const NoticeList = () => {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setNewNotice(initialNoticeState); // 입력 필드 초기화
+  };
+
+  // 페이지 변경 핸들러
+  const handlePageChange = (event, value) => {
+    setPage(value);
   };
 
   return (
@@ -352,7 +361,7 @@ const NoticeList = () => {
           <Pagination
             count={Math.ceil(filteredNotices.length / itemsPerPage)}
             page={page}
-            onChange={(e, value) => setPage(value)}
+            onChange={handlePageChange}
             color="primary"
             size="small"
           />
