@@ -30,6 +30,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import SettingsIcon from '@mui/icons-material/Settings';
+import SupportIcon from '@mui/icons-material/Support';
 
 const Sidebar = () => {
   const [open, setOpen] = useState(false);
@@ -52,23 +53,39 @@ const Sidebar = () => {
 
   // 메뉴 아이템 필터링
   const menuItems = [
-    // 모든 사용자가 볼 수 있는 메뉴
-    { text: '홈', icon: <HomeIcon />, path: '/' },
-    { text: '점검 시작하기', icon: <AssignmentIcon />, path: '/inspection', requireAuth: true },
-    { text: '점검 목록', path: '/inspections', icon: <ListAltIcon />, requireAuth: true },
-    { text: '공지사항', icon: <NotificationsIcon />, path: '/notices' },
-    { text: '문의사항', icon: <QuestionAnswerIcon />, path: '/inquiries' },
-
-    // ADMIN과 MANAGER만 볼 수 있는 메뉴
-    ...(isAdminOrManager ? [
-      { text: '업체 관리', icon: <BusinessIcon />, path: '/companies' },
-      { text: '사용자 관리', icon: <PeopleIcon />, path: '/users' },
-      {
-        icon: <SettingsIcon />,
-        text: '설정',
-        path: '/settings/dashboard',
-      }
-    ] : [])
+    // 메인 메뉴
+    {
+      category: '메인',
+      items: [
+        { text: '홈', path: '/' }
+      ]
+    },
+    // 점검 관련 메뉴
+    {
+      category: '점검',
+      items: [
+        { text: '점검 시작하기', path: '/inspection', requireAuth: true },
+        { text: '점검 목록', path: '/inspections', requireAuth: true }
+      ]
+    },
+    // 게시판 메뉴
+    {
+      category: '게시판',
+      items: [
+        { text: '공지사항', path: '/notices' },
+        { text: '문의사항', path: '/inquiries' },
+        { text: '고객센터', path: '/customer' }
+      ]
+    },
+    // 관리자 메뉴 (ADMIN과 MANAGER만 볼 수 있음)
+    ...(isAdminOrManager ? [{
+      category: '관리',
+      items: [
+        { text: '업체 관리', path: '/companies' },
+        { text: '사용자 관리', path: '/users' },
+        { text: '설정', path: '/settings/dashboard' }
+      ]
+    }] : [])
   ];
 
   const toggleDrawer = (open) => (event) => {
@@ -249,76 +266,93 @@ const Sidebar = () => {
         open={open}
         onClose={toggleDrawer(false)}
       >
-        <Box
-          sx={{ width: 250 }}
-          role="presentation"
-        >
+        <Box sx={{ width: 250 }} role="presentation">
           <Box sx={{ p: 2, bgcolor: '#1C243A' }}>
             <Typography variant="h6" sx={{ color: 'white' }}>
               AS 센터
             </Typography>
           </Box>
-          <Divider />
-          <List>
-            {menuItems.map((item) => (
-              <ListItem
-                button
-                key={item.text}
-                onClick={() => handleMenuClick(item)}
+          
+          {menuItems.map((category, index) => (
+            <React.Fragment key={index}>
+              {/* 카테고리 제목 */}
+              <Typography
                 sx={{
-                  '&:hover': {
-                    bgcolor: 'rgba(75, 119, 216, 0.08)',
-                  },
-                  // 로그인 필요한 메뉴 스타일
-                  ...(item.requireAuth && !localStorage.getItem('token') && {
-                    opacity: 0.6,
-                    '&::after': {
-                      content: '"*"',
-                      color: 'warning.main',
-                      ml: 1
-                    }
-                  })
+                  px: 2,
+                  py: 1,
+                  fontSize: '0.75rem',
+                  color: 'text.secondary',
+                  bgcolor: 'rgba(0, 0, 0, 0.02)',
+                  borderBottom: '1px solid rgba(0, 0, 0, 0.05)'
                 }}
               >
-                <ListItemIcon sx={{ color: '#1C243A' }}>
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText 
-                  primary={item.text} 
-                  sx={{ 
-                    '& .MuiListItemText-primary': { 
-                      color: '#2A2A2A',
-                      fontWeight: 500
-                    }
-                  }}
-                />
-              </ListItem>
-            ))}
-            <Divider />
-            <ListItem
-              button
-              onClick={() => user ? handleLogout() : setLoginDialogOpen(true)}
-              sx={{
-                '&:hover': {
-                  bgcolor: 'rgba(75, 119, 216, 0.08)',
+                {category.category}
+              </Typography>
+              
+              {/* 카테고리 항목들 */}
+              <List disablePadding>
+                {category.items.map((item) => (
+                  <ListItem
+                    key={item.text}
+                    button
+                    onClick={() => handleMenuClick(item)}
+                    sx={{
+                      pl: 3,  // 들여쓰기
+                      py: 1,  // 높이 줄임
+                      '&:hover': {
+                        bgcolor: 'rgba(75, 119, 216, 0.08)',
+                      },
+                      ...(item.requireAuth && !localStorage.getItem('token') && {
+                        opacity: 0.6,
+                        '&::after': {
+                          content: '"*"',
+                          color: 'warning.main',
+                          ml: 1
+                        }
+                      })
+                    }}
+                  >
+                    <ListItemText 
+                      primary={item.text} 
+                      sx={{ 
+                        '& .MuiListItemText-primary': { 
+                          fontSize: '0.9rem',
+                          color: '#2A2A2A',
+                          fontWeight: 500
+                        }
+                      }}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+              {index < menuItems.length - 1 && <Divider />}
+            </React.Fragment>
+          ))}
+
+          {/* 로그인/로그아웃 버튼 */}
+          <Divider />
+          <ListItem
+            button
+            onClick={() => user ? handleLogout() : setLoginDialogOpen(true)}
+            sx={{
+              py: 1.5,
+              '&:hover': {
+                bgcolor: 'rgba(75, 119, 216, 0.08)',
+              }
+            }}
+          >
+            <ListItemText 
+              primary={user ? '로그아웃' : '로그인'} 
+              secondary={user ? user.fullName : null}
+              sx={{ 
+                '& .MuiListItemText-primary': { 
+                  color: '#2A2A2A',
+                  fontWeight: 500,
+                  fontSize: '0.9rem'
                 }
               }}
-            >
-              <ListItemIcon sx={{ color: '#1C243A' }}>
-                {user ? <LogoutIcon /> : <PersonIcon />}
-              </ListItemIcon>
-              <ListItemText 
-                primary={user ? '로그아웃' : '로그인'} 
-                secondary={user ? user.fullName : null}
-                sx={{ 
-                  '& .MuiListItemText-primary': { 
-                    color: '#2A2A2A',
-                    fontWeight: 500
-                  }
-                }}
-              />
-            </ListItem>
-          </List>
+            />
+          </ListItem>
         </Box>
       </Drawer>
 

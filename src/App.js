@@ -25,6 +25,7 @@ const InspectionList = React.lazy(() => import('./components/inspection/Inspecti
 const NoticeList = React.lazy(() => import('./components/notice/NoticeList'));
 const InquiryList = React.lazy(() => import('./components/inquiry/InquiryList'));
 const InspectionHome = React.lazy(() => import('./components/inspection/InspectionHome'));
+const CustomerCenter = React.lazy(() => import('./components/customer/CustomerCenter'));
 
 // 로딩 컴포넌트
 const LoadingFallback = () => (
@@ -74,6 +75,7 @@ function App() {
                   <Route path="/notices" element={<NoticeList />} />
                   <Route path="/inquiries" element={<InquiryList />} />
                   <Route path="/settings/*" element={<Settings />}/>
+                  <Route path="/customer/*" element={<CustomerCenter />} />
                 </Routes>
               </Suspense>
             </Box>
