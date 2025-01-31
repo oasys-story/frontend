@@ -14,7 +14,9 @@ import {
   FormControlLabel,
   Switch,
   Modal,
-  Paper
+  Paper,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -57,6 +59,27 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
+
+  // 초기 상태 정의
+  const initialState = {
+    inquiryTitle: '',
+    inquiryContent: '',
+    contactNumber: '',
+    images: []
+  };
+
+  // 다이얼로그 닫기 핸들러
+  const handleClose = () => {
+    if (!inquiry) {  // 등록 모드일 때만 초기화
+      setNewInquiry(initialState);
+    }
+    onClose();
+  };
 
   const handleEditClick = () => {
     setEditedInquiry({
@@ -89,6 +112,10 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
 
   const handleRemoveNewImage = (indexToRemove) => {
     setNewImages(newImages.filter((_, index) => index !== indexToRemove));
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
   };
 
   const handleUpdate = async () => {
@@ -148,16 +175,24 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();  // 에러 응답 내용 확인
-        console.error('Server Error:', errorData);
+        const errorData = await response.json();
         throw new Error(errorData.message || '문의사항 수정에 실패했습니다.');
       }
 
+      setSnackbar({
+        open: true,
+        message: '문의사항이 성공적으로 수정되었습니다.',
+        severity: 'success'
+      });
+      
       setIsEditing(false);
       if (onUpdate) onUpdate();
     } catch (error) {
-      console.error('문의사항 수정 실패:', error);
-      alert(error.message);
+      setSnackbar({
+        open: true,
+        message: error.message || '문의사항 수정에 실패했습니다.',
+        severity: 'error'
+      });
     }
   };
 
@@ -172,14 +207,24 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
         });
 
         if (!response.ok) {
-          throw new Error('문의사항 삭제에 실패했습니다.');
+          const errorData = await response.json();
+          throw new Error(errorData.message || '문의사항 삭제에 실패했습니다.');
         }
+
+        setSnackbar({
+          open: true,
+          message: '문의사항이 성공적으로 삭제되었습니다.',
+          severity: 'success'
+        });
 
         onClose();
         if (onDelete) onDelete();
       } catch (error) {
-        console.error('문의사항 삭제 실패:', error);
-        alert(error.message);
+        setSnackbar({
+          open: true,
+          message: error.message || '문의사항 삭제에 실패했습니다.',
+          severity: 'error'
+        });
       }
     }
   };
@@ -215,10 +260,20 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
         throw new Error('문의사항 등록에 실패했습니다.');
       }
 
+      setSnackbar({
+        open: true,
+        message: '문의사항이 성공적으로 등록되었습니다.',
+        severity: 'success'
+      });
+
+      setNewInquiry(initialState);  // 성공 시 초기화
       onClose();
     } catch (error) {
-      console.error('문의사항 등록 실패:', error);
-      alert(error.message);
+      setSnackbar({
+        open: true,
+        message: error.message || '문의사항 등록에 실패했습니다.',
+        severity: 'error'
+      });
     }
   };
 
@@ -248,148 +303,19 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
     });
   };
 
-  // 등록 모드 UI
-  if (!inquiry) {
-    return (
-      <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          <Typography variant="h6">문의사항 등록</Typography>
-        </DialogTitle>
-
-        <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="제목"
-                value={newInquiry.inquiryTitle}
-                onChange={(e) => setNewInquiry({
-                  ...newInquiry,
-                  inquiryTitle: e.target.value
-                })}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                multiline
-                rows={4}
-                label="문의내용"
-                value={newInquiry.inquiryContent}
-                onChange={(e) => setNewInquiry({
-                  ...newInquiry,
-                  inquiryContent: e.target.value
-                })}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="연락처"
-                value={newInquiry.contactNumber}
-                onChange={(e) => setNewInquiry({
-                  ...newInquiry,
-                  contactNumber: e.target.value
-                })}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                style={{ display: 'none' }}
-                id="inquiry-create-image"
-                onChange={handleCreateImageChange}
-              />
-              <label htmlFor="inquiry-create-image">
-                <Button
-                  variant="outlined"
-                  component="span"
-                  size="small"
-                >
-                  이미지 추가
-                </Button>
-              </label>
-
-              {/* 선택된 이미지 미리보기 */}
-              {newInquiry.images.length > 0 && (
-                <Box sx={{ mt: 2 }}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-                    선택된 이미지 ({newInquiry.images.length})
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    {newInquiry.images.map((image, index) => (
-                      <Box
-                        key={index}
-                        sx={{ 
-                          position: 'relative',
-                          width: 100,
-                          height: 100,
-                          border: '1px solid #eee',
-                          borderRadius: 1,
-                          overflow: 'hidden'
-                        }}
-                      >
-                        <img
-                          src={URL.createObjectURL(image)}
-                          alt={`이미지 ${index + 1}`}
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover'
-                          }}
-                        />
-                        <IconButton
-                          size="small"
-                          sx={{
-                            position: 'absolute',
-                            top: 0,
-                            right: 0,
-                            bgcolor: 'rgba(255,255,255,0.8)',
-                            '&:hover': {
-                              bgcolor: 'rgba(255,255,255,0.9)'
-                            }
-                          }}
-                          onClick={() => handleRemoveCreateImage(index)}
-                        >
-                          <ClearIcon fontSize="small" />
-                        </IconButton>
-                      </Box>
-                    ))}
-                  </Box>
-                </Box>
-              )}
-            </Grid>
-          </Grid>
-        </DialogContent>
-
-        <DialogActions>
-          <Button onClick={onClose}>취소</Button>
-          <Button 
-            onClick={handleCreate} 
-            variant="contained"
-            disabled={!newInquiry.inquiryTitle || !newInquiry.inquiryContent}
-          >
-            등록
-          </Button>
-        </DialogActions>
-      </Dialog>
-    );
-  }
-
   return (
     <>
-      <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center',
           pb: 1
         }}>
-          {/* 수정 모드가 아닐 때만 제목 표시 */}
-          {!isEditing ? (
-            <Typography variant="h6">{inquiry?.inquiryTitle}</Typography>
+          {!inquiry ? (
+            <Typography variant="h6">문의사항 등록</Typography>
+          ) : !isEditing ? (
+            <Typography variant="h6">{inquiry.inquiryTitle}</Typography>
           ) : (
             <Typography variant="h6">문의사항 수정</Typography>
           )}
@@ -408,7 +334,115 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
         </DialogTitle>
 
         <DialogContent>
-          {isEditing ? (
+          {!inquiry ? (
+            // 등록 모드
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="제목"
+                  value={newInquiry.inquiryTitle}
+                  onChange={(e) => setNewInquiry({
+                    ...newInquiry,
+                    inquiryTitle: e.target.value
+                  })}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={4}
+                  label="문의내용"
+                  value={newInquiry.inquiryContent}
+                  onChange={(e) => setNewInquiry({
+                    ...newInquiry,
+                    inquiryContent: e.target.value
+                  })}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="연락처"
+                  value={newInquiry.contactNumber}
+                  onChange={(e) => setNewInquiry({
+                    ...newInquiry,
+                    contactNumber: e.target.value
+                  })}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  style={{ display: 'none' }}
+                  id="inquiry-create-image"
+                  onChange={handleCreateImageChange}
+                />
+                <label htmlFor="inquiry-create-image">
+                  <Button
+                    variant="outlined"
+                    component="span"
+                    size="small"
+                  >
+                    이미지 추가
+                  </Button>
+                </label>
+
+                {/* 선택된 이미지 미리보기 */}
+                {newInquiry.images.length > 0 && (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                      선택된 이미지 ({newInquiry.images.length})
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                      {newInquiry.images.map((image, index) => (
+                        <Box
+                          key={index}
+                          sx={{ 
+                            position: 'relative',
+                            width: 100,
+                            height: 100,
+                            border: '1px solid #eee',
+                            borderRadius: 1,
+                            overflow: 'hidden'
+                          }}
+                        >
+                          <img
+                            src={URL.createObjectURL(image)}
+                            alt={`이미지 ${index + 1}`}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover'
+                            }}
+                          />
+                          <IconButton
+                            size="small"
+                            sx={{
+                              position: 'absolute',
+                              top: 0,
+                              right: 0,
+                              bgcolor: 'rgba(255,255,255,0.8)',
+                              '&:hover': {
+                                bgcolor: 'rgba(255,255,255,0.9)'
+                              }
+                            }}
+                            onClick={() => handleRemoveCreateImage(index)}
+                          >
+                            <ClearIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+              </Grid>
+            </Grid>
+          ) : isEditing ? (
+            // 수정 모드
             <Grid container spacing={2}>
               <Grid item xs={12} sx={{ mt: 4 }}>
                 <TextField
@@ -596,10 +630,9 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
                   </Grid>
                 </>
               )}
-
-              
             </Grid>
           ) : (
+            // 상세보기 모드
             <>
               <Box sx={{ mb: 2, color: 'grey.600' }}>
                 <Typography variant="body2" sx={{ mb: 1 }}>
@@ -672,35 +705,73 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
               <Divider sx={{ my: 2 }} />
 
               <Box sx={{ mb: 2 }}>
-                <Typography Typography 
-                variant="subtitle2" 
-                sx={{ 
-                  mb: 1,
-                  color: 'text.secondary',
-                  fontWeight: 500,
-                  fontSize: '0.875rem',
-                  letterSpacing: '0.01em'
-                }} gutterBottom>
-                  처리상태: {inquiry.processed ? "처리완료" : "미처리"}
-                </Typography>
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center',
+                  mb: 2 
+                }}>
+                  <Typography 
+                    variant="subtitle2" 
+                    sx={{ 
+                      color: 'text.secondary',
+                      fontWeight: 500,
+                      fontSize: '0.875rem',
+                      letterSpacing: '0.01em'
+                    }}
+                  >
+                    처리상태:{' '}
+                  </Typography>
+                  <Typography 
+                    component="span" 
+                    sx={{ 
+                      ml: 1,
+                      fontSize: '0.8rem',
+                      color: inquiry.processed ? '#4caf50' : '#ff9800',
+                      bgcolor: inquiry.processed ? 'rgba(76, 175, 80, 0.1)' : 'rgba(255, 152, 0, 0.1)',
+                      px: 1,
+                      py: 0.3,
+                      borderRadius: '4px',
+                      display: 'inline-flex',
+                      alignItems: 'center'
+                    }}
+                  >
+                    {inquiry.processed ? "처리완료" : "미처리"}
+                  </Typography>
+                </Box>
+
                 {inquiry.processed && (
-                  <Box sx={{ bgcolor: '#e3f2fd', p: 2, borderRadius: 1 }}>
+                  <Box sx={{ 
+                    bgcolor: 'rgba(76, 175, 80, 0.05)',
+                    border: '1px solid rgba(76, 175, 80, 0.2)', 
+                    p: 2.5, 
+                    borderRadius: 1 
+                  }}>
                     {inquiry.processContent && (
                       <>
                         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                           처리내용
                         </Typography>
-                        <Typography variant="body2" sx={{ mb: 2, whiteSpace: 'pre-wrap' }}>
+                        <Typography variant="body2" sx={{ 
+                          mb: 2, 
+                          whiteSpace: 'pre-wrap',
+                          fontSize: '0.9rem',
+                          lineHeight: 1.8
+                        }}>
                           {inquiry.processContent}
                         </Typography>
                       </>
                     )}
                     {inquiry.memo && (
                       <>
+                        <Divider sx={{ my: 2, opacity: 0.2 }} />
                         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                           메모
                         </Typography>
-                        <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                        <Typography variant="body2" sx={{ 
+                          whiteSpace: 'pre-wrap',
+                          fontSize: '0.9rem',
+                          lineHeight: 1.8
+                        }}>
                           {inquiry.memo}
                         </Typography>
                       </>
@@ -713,13 +784,21 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
         </DialogContent>
 
         <DialogActions>
-          {isEditing ? (
+          {!inquiry ? (
+            // 등록 모드
+            <>
+              <Button onClick={handleClose}>취소</Button>
+              <Button onClick={handleCreate} variant="contained">등록</Button>
+            </>
+          ) : isEditing ? (
+            // 수정 모드
             <>
               <Button onClick={() => setIsEditing(false)}>취소</Button>
               <Button onClick={handleUpdate} variant="contained">수정</Button>
             </>
           ) : (
-            <Button onClick={onClose}>닫기</Button>
+            // 상세보기 모드
+            <Button onClick={handleClose}>닫기</Button>
           )}
         </DialogActions>
       </Dialog>
@@ -749,6 +828,26 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
           onClick={() => setImageModalOpen(false)}
         />
       </Modal>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity}
+          variant="filled"
+          sx={{ 
+            width: '100%',
+            boxShadow: 3,
+            fontSize: '0.95rem'
+          }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 };

@@ -25,6 +25,8 @@ import HomeIcon from '@mui/icons-material/Home';
 import ListIcon from '@mui/icons-material/List';
 import SignatureDialog from './SignatureDialog';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import InspectionPDF from './InspectionPdf';
 
 const InspectionResult = () => {
   const { id } = useParams();
@@ -60,7 +62,11 @@ const InspectionResult = () => {
     const fetchInspectionDetail = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`http://localhost:8080/api/inspections/${id}/detail`);
+        const response = await fetch(`http://localhost:8080/api/inspections/${id}/detail`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
         if (!response.ok) {
           throw new Error('점검 데이터를 불러오는데 실패했습니다.');
         }
@@ -149,33 +155,32 @@ const InspectionResult = () => {
     }
   };
 
-  const handlePdfDownload = async () => {
-    try {
-      const response = await fetch(`http://localhost:8080/api/inspections/${id}/pdf`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/pdf',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+  // 삭제 핸들러
+  const handleDelete = async () => {
+    if (!hasPermission) {
+      alert('삭제 권한이 없습니다.');
+      return;
+    }
+
+    if (window.confirm('정말 삭제하시겠습니까?')) {
+      try {
+        const response = await fetch(`http://localhost:8080/api/inspections/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        if (response.ok) {
+          alert('점검 기록이 삭제되었습니다.');
+          navigate('/inspections');
+        } else {
+          throw new Error('삭제 실패');
         }
-      });
-
-      if (!response.ok) {
-        throw new Error('PDF 생성에 실패했습니다.');
+      } catch (error) {
+        console.error('Failed to delete inspection:', error);
+        alert('삭제 중 오류가 발생했습니다.');
       }
-
-      // PDF 파일 다운로드
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `inspection_${id}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error:', error);
-      alert(error.message);
     }
   };
 
@@ -240,6 +245,13 @@ const InspectionResult = () => {
     }
   };
 
+  // 권한 체크
+  const currentUserId = localStorage.getItem('userId');
+  
+  // 수정/삭제 권한 체크
+  const hasPermission = isAdmin || (data?.userId === parseInt(currentUserId));
+
+
   return (
     <Box sx={{ 
       minHeight: '100vh', 
@@ -278,12 +290,16 @@ const InspectionResult = () => {
               <Typography>{data.companyName}</Typography>
             </Grid>
             <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">점검일</Typography>
+              <Typography variant="body2" color="text.secondary">점검일자</Typography>
               <Typography>{new Date(data.inspectionDate).toLocaleDateString()}</Typography>
             </Grid>
             <Grid item xs={6}>
               <Typography variant="body2" color="text.secondary">점검자</Typography>
               <Typography>{data.managerName}</Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography variant="body2" color="text.secondary">작성자</Typography>
+              <Typography>{data?.username}</Typography>
             </Grid>
           </Grid>
         </Paper>
@@ -458,7 +474,7 @@ const InspectionResult = () => {
               첨부 이미지
             </Typography>
             <ImageList sx={{ width: '100%', height: 'auto' }} cols={2} rowHeight={164}>
-              {data.images.map((imageName, index) => (
+              {[...new Set(data.images)].map((imageName, index) => (
                 <ImageListItem 
                   key={index}
                   onClick={() => setSelectedImage(`http://localhost:8080/uploads/images/${imageName}`)}
@@ -472,6 +488,10 @@ const InspectionResult = () => {
                       height: '100%', 
                       objectFit: 'cover',
                       borderRadius: '4px'
+                    }}
+                    onError={(e) => {
+                      console.error('Failed to load image:', imageName);
+                      e.target.src = '/placeholder-image.png';
                     }}
                   />
                 </ImageListItem>
@@ -499,8 +519,8 @@ const InspectionResult = () => {
                 <Box
                   component="img"
                   src={data.signature.startsWith('data:') 
-                    ? data.signature  // Base64 데이터인 경우 직접 사용
-                    : `http://localhost:8080/uploads/signatures/${data.signature}`  // 파일 경로인 경우
+                    ? data.signature
+                    : `http://localhost:8080/uploads/signatures/${data.signature}`
                   }
                   alt="점검자 서명"
                   sx={{
@@ -530,7 +550,7 @@ const InspectionResult = () => {
             
             {/* 관리자 서명 */}
             <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">관리자 서명</Typography>
+              <Typography variant="body2" color="text.secondary">업체 서명</Typography>
               {data.managerSignature ? (
                 <Box
                   component="img"
@@ -538,7 +558,7 @@ const InspectionResult = () => {
                     ? data.managerSignature
                     : `http://localhost:8080/uploads/signatures/${data.managerSignature}`
                   }
-                  alt="관리자 서명"
+                  alt="업체 서명"
                   sx={{
                     width: '100%',
                     height: '100px',
@@ -550,7 +570,11 @@ const InspectionResult = () => {
                 />
               ) : (
                 <Box
-                  onClick={() => isAdmin ? setSignatureDialogOpen(true) : alert('관리자만 서명할 수 있습니다.')}
+                  onClick={() => 
+                    localStorage.getItem('role') === 'USER' 
+                      ? setSignatureDialogOpen(true) 
+                      : alert('점검대상업체만 서명할 수 있습니다.')
+                  }
                   sx={{ 
                     width: '100%', 
                     height: '100px', 
@@ -560,21 +584,61 @@ const InspectionResult = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    cursor: isAdmin ? 'pointer' : 'not-allowed',
-                    opacity: isAdmin ? 1 : 0.6,
+                    cursor: localStorage.getItem('role') === 'USER' ? 'pointer' : 'not-allowed',
+                    opacity: localStorage.getItem('role') === 'USER' ? 1 : 0.6,
                     '&:hover': {
-                      bgcolor: isAdmin ? 'rgba(28, 36, 58, 0.04)' : undefined
+                      bgcolor: localStorage.getItem('role') === 'USER' ? 'rgba(28, 36, 58, 0.04)' : undefined
                     }
                   }}
                 >
                   <Typography color="primary">
-                    {isAdmin ? '서명하기' : '관리자 전용'}
+                    {localStorage.getItem('role') === 'USER' ? '서명하기' : '점검대상업체 전용'}
                   </Typography>
                 </Box>
               )}
             </Grid>
           </Grid>
         </Paper>
+
+        {/* PDF 다운로드 버튼 */}
+        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+          <PDFDownloadLink 
+            document={
+              <InspectionPDF 
+                data={data} 
+                checklistLabels={checklistLabels}
+                getStatusText={getStatusText}
+              />
+            } 
+            fileName={`inspection_${id}.pdf`}
+            style={{ textDecoration: 'none' }}
+          >
+            {({ blob, url, loading, error }) => 
+              loading ? (
+                <Button
+                  variant="contained"
+                  disabled
+                  startIcon={<CircularProgress size={20} />}
+                  sx={{ minWidth: '200px' }}
+                >
+                  PDF 생성중...
+                </Button>
+              ) : (
+                <Button
+                  variant="contained"
+                  startIcon={<PictureAsPdfIcon />}
+                  sx={{ 
+                    minWidth: '200px',
+                    bgcolor: '#1C243A',
+                    '&:hover': { bgcolor: '#3d63b8' }
+                  }}
+                >
+                  PDF 다운로드
+                </Button>
+              )
+            }
+          </PDFDownloadLink>
+        </Box>
       </Box>
 
       {/* 하단 버튼 */}
@@ -583,32 +647,50 @@ const InspectionResult = () => {
         bottom: 0,
         left: 0,
         right: 0,
-        bgcolor: '#FFFFFF',
+        p: 2,
+        bgcolor: 'white',
         borderTop: '1px solid #eee',
-        p: 2
+        display: 'flex',
+        gap: 1,
+        justifyContent: 'center'
       }}>
-        <Grid container spacing={2}>
-          <Grid item xs={6}>
+        <Button
+          variant="outlined"
+          onClick={() => navigate('/inspections')}
+          sx={{ minWidth: '100px' }}
+        >
+          목록
+        </Button>
+        {hasPermission && (
+          <>
             <Button
-              fullWidth
               variant="contained"
-              onClick={handlePdfDownload}
-              startIcon={<PictureAsPdfIcon />}
+              onClick={() => navigate(`/inspection/edit/${id}`)}
+              sx={{ 
+                minWidth: '100px',
+                bgcolor: '#1C243A',
+                '&:hover': { bgcolor: '#3d63b8' }
+              }}
             >
-              PDF 다운로드
+              수정
             </Button>
-          </Grid>
-          <Grid item xs={6}>
             <Button
-              fullWidth
               variant="outlined"
-              onClick={() => navigate('/inspections')}
-              startIcon={<ListIcon />}
+              onClick={handleDelete}
+              sx={{ 
+                minWidth: '100px',
+                color: 'error.main',
+                borderColor: 'error.main',
+                '&:hover': {
+                  backgroundColor: 'error.light',
+                  color: 'white'
+                }
+              }}
             >
-              목록
+              삭제
             </Button>
-          </Grid>
-        </Grid>
+          </>
+        )}
       </Box>
 
       {/* SMS 다이얼로그 */}
@@ -648,22 +730,22 @@ const InspectionResult = () => {
         onConfirm={handleManagerSignature}
       />
 
-      {/* 이미지 확대 다이얼로그 추가 */}
+      {/* 이미지 상세보기 모달 */}
       <Dialog
-        open={Boolean(selectedImage)}
+        open={!!selectedImage}
         onClose={() => setSelectedImage(null)}
         maxWidth="md"
         fullWidth
       >
-        <DialogContent sx={{ p: 1 }}>
+        <DialogContent sx={{ p: 0 }}>
           {selectedImage && (
             <img
               src={selectedImage}
-              alt="확대된 이미지"
-              style={{
-                width: '100%',
-                height: 'auto',
-                objectFit: 'contain'
+              alt="상세 이미지"
+              style={{ width: '100%', height: 'auto' }}
+              onError={(e) => {
+                console.error('Failed to load large image:', selectedImage);
+                e.target.src = '/placeholder-image.png';
               }}
             />
           )}

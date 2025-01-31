@@ -21,7 +21,9 @@ import {
   Switch,
   Grid,
   Stack,
-  Pagination
+  Pagination,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
 import SearchIcon from '@mui/icons-material/Search';
@@ -46,10 +48,25 @@ const NoticeList = () => {
     popupEndDate: null,
     images: []
   });
-  const itemsPerPage = 10;
+  const itemsPerPage = 5;
   const navigate = useNavigate();
   const [selectedNotice, setSelectedNotice] = useState(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
+
+  // 초기 상태 상수로 정의
+  const initialNoticeState = {
+    title: '',
+    content: '',
+    popup: false,
+    popupStartDate: null,
+    popupEndDate: null,
+    images: []
+  };
 
   useEffect(() => {
     fetchNotices();
@@ -65,15 +82,23 @@ const NoticeList = () => {
 
   const fetchNotices = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/notices');
+      const response = await fetch('http://localhost:8080/api/notices', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setNotices(data);
         setFilteredNotices(data);
       }
     } catch (error) {
-      console.error('공지사항 목록 로딩 실패:', error);
+      console.error('Failed to fetch notices:', error);
     }
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
   };
 
   const handleSubmit = async () => {
@@ -107,19 +132,22 @@ const NoticeList = () => {
         throw new Error(errorData.message || '공지사항 등록에 실패했습니다.');
       }
 
+      setSnackbar({
+        open: true,
+        message: '공지사항이 성공적으로 등록되었습니다.',
+        severity: 'success'
+      });
+
       fetchNotices();
       setDialogOpen(false);
-      setNewNotice({
-        title: '',
-        content: '',
-        popup: false,
-        popupStartDate: null,
-        popupEndDate: null,
-        images: []
-      });
+      setNewNotice(initialNoticeState); // 입력 필드 초기화
     } catch (error) {
       console.error('공지사항 등록 실패:', error);
-      alert(error.message || '공지사항 등록에 실패했습니다.');
+      setSnackbar({
+        open: true,
+        message: error.message || '공지사항 등록에 실패했습니다.',
+        severity: 'error'
+      });
     }
   };
 
@@ -162,6 +190,30 @@ const NoticeList = () => {
     } catch (error) {
       console.error('공지사항 상세 조회 실패:', error);
     }
+  };
+
+  const handleAddNoticeClick = () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setSnackbar({
+        open: true,
+        message: '로그인 후 이용해 주세요.',
+        severity: 'warning'  // 경고 메시지는 노란색으로 표시
+      });
+      return;
+    }
+    setDialogOpen(true);
+  };
+
+  // 다이얼로그 닫기 핸들러
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setNewNotice(initialNoticeState); // 입력 필드 초기화
+  };
+
+  // 페이지 변경 핸들러
+  const handlePageChange = (event, value) => {
+    setPage(value);
   };
 
   return (
@@ -292,7 +344,7 @@ const NoticeList = () => {
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => setDialogOpen(true)}
+            onClick={handleAddNoticeClick}
             sx={{
               bgcolor: '#1C243A',
               '&:hover': {
@@ -309,7 +361,7 @@ const NoticeList = () => {
           <Pagination
             count={Math.ceil(filteredNotices.length / itemsPerPage)}
             page={page}
-            onChange={(e, value) => setPage(value)}
+            onChange={handlePageChange}
             color="primary"
             size="small"
           />
@@ -317,7 +369,7 @@ const NoticeList = () => {
       </Box>
 
       {/* 공지사항 등록 다이얼로그 */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle>공지사항 등록</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
@@ -444,7 +496,7 @@ const NoticeList = () => {
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>취소</Button>
+          <Button onClick={handleCloseDialog}>취소</Button>
           <Button onClick={handleSubmit} variant="contained">등록</Button>
         </DialogActions>
       </Dialog>
@@ -463,6 +515,27 @@ const NoticeList = () => {
           fetchNotices();
         }}
       />
+
+      {/* Snackbar 추가 */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity}
+          variant="filled"
+          sx={{ 
+            width: '100%',
+            boxShadow: 3,
+            fontSize: '0.95rem'
+          }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

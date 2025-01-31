@@ -40,11 +40,11 @@ import VoiceRecorder from './VoiceRecorder';
 const steps = ['기본 정보', '기본사항', '점검내역', '측정개소', '특이사항'];
 
 /* 점검 폼 컴포넌트 */
-const InspectionForm = () => {
-  const navigate = useNavigate(); // 네비게이션 기능 사용
-  const [activeStep, setActiveStep] = useState(0); // 현재 스탭 상태 관리
+const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = null }) => {
+  const navigate = useNavigate();
+  const [activeStep, setActiveStep] = useState(0);
   const [formData, setFormData] = useState({
-    companyId: '',  // facilityName 대신 companyId로 변경
+    companyId: '',
     inspectionDate: null,
     managerName: '',
     
@@ -89,12 +89,71 @@ const InspectionForm = () => {
     // 특이사항
     specialNotes: ''
   });
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false); // 확인 다이얼로그 상태 관리
-  const [signatureDialogOpen, setSignatureDialogOpen] = useState(false); // 서명 다이얼로그 상태 관리
-  const [signature, setSignature] = useState(null); // 서명 데이터 상태 관리
-  const [companies, setCompanies] = useState([]);  // 회사 목록을 위한 state 추가
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [signatureDialogOpen, setSignatureDialogOpen] = useState(false);
+  const [signature, setSignature] = useState(null);
+  const [companies, setCompanies] = useState([]);
   const [images, setImages] = useState([]);
   const fileInputRef = useRef(null);
+
+  // 수정 모드일 때 초기 데이터 설정
+  useEffect(() => {
+    if (isEdit && initialData) {
+      setFormData({
+        companyId: initialData.companyId || '',
+        inspectionDate: initialData.inspectionDate ? new Date(initialData.inspectionDate) : null,
+        managerName: initialData.managerName || '',
+        faucetVoltage: initialData.faucetVoltage || '',
+        faucetCapacity: initialData.faucetCapacity || '',
+        generationVoltage: initialData.generationVoltage || '',
+        generationCapacity: initialData.generationCapacity || '',
+        solarCapacity: initialData.solarCapacity || '',
+        contractCapacity: initialData.contractCapacity || '',
+        inspectionType: initialData.inspectionType || '',
+        inspectionCount: initialData.inspectionCount || '',
+        wiringInlet: initialData.wiringInlet || '',
+        distributionPanel: initialData.distributionPanel || '',
+        moldedCaseBreaker: initialData.moldedCaseBreaker || '',
+        earthLeakageBreaker: initialData.earthLeakageBreaker || '',
+        switchGear: initialData.switchGear || '',
+        wiring: initialData.wiring || '',
+        motor: initialData.motor || '',
+        heatingEquipment: initialData.heatingEquipment || '',
+        welder: initialData.welder || '',
+        capacitor: initialData.capacitor || '',
+        lighting: initialData.lighting || '',
+        grounding: initialData.grounding || '',
+        internalWiring: initialData.internalWiring || '',
+        generator: initialData.generator || '',
+        otherEquipment: initialData.otherEquipment || '',
+        measurements: initialData.measurements.map(m => ({
+          measurementNumber: m.measurementNumber,
+          voltageA: m.voltageA || '',
+          currentA: m.currentA || '',
+          temperatureA: m.temperatureA || '',
+          voltageB: m.voltageB || '',
+          currentB: m.currentB || '',
+          temperatureB: m.temperatureB || '',
+          voltageC: m.voltageC || '',
+          currentC: m.currentC || '',
+          temperatureC: m.temperatureC || '',
+          voltageN: m.voltageN || '',
+          currentN: m.currentN || '',
+          temperatureN: m.temperatureN || ''
+        })),
+        specialNotes: initialData.specialNotes || ''
+      });
+
+      // 이미지가 있다면 설정
+      if (initialData.images && initialData.images.length > 0) {
+        setImages(initialData.images.map(imageName => ({
+          preview: `http://localhost:8080/uploads/images/${imageName}`,
+          name: imageName,
+          isNew: false  // 기존 이미지 표시
+        })));
+      }
+    }
+  }, [isEdit, initialData]);
 
   // 회사 목록 불러오기
   useEffect(() => {
@@ -142,82 +201,65 @@ const InspectionForm = () => {
     try {
       const formDataObj = new FormData();
       
-      // 점검 데이터 객체 생성
       const inspectionData = {
-        companyId: formData.companyId,
-        inspectionDate: formData.inspectionDate ? formData.inspectionDate.toISOString().split('T')[0] : null,
-        managerName: formData.managerName,
-        
-        // 기본사항
-        faucetVoltage: formData.faucetVoltage || null,
-        faucetCapacity: formData.faucetCapacity || null,
-        generationVoltage: formData.generationVoltage || null,
-        generationCapacity: formData.generationCapacity || null,
-        solarCapacity: formData.solarCapacity || null,
-        contractCapacity: formData.contractCapacity || null,
-        inspectionType: formData.inspectionType || '',
-        inspectionCount: formData.inspectionCount || null,
-        
-        // 점검내역
-        wiringInlet: formData.wiringInlet || null,
-        distributionPanel: formData.distributionPanel || null,
-        moldedCaseBreaker: formData.moldedCaseBreaker || null,
-        earthLeakageBreaker: formData.earthLeakageBreaker || null,
-        switchGear: formData.switchGear || null,
-        wiring: formData.wiring || null,
-        motor: formData.motor || null,
-        heatingEquipment: formData.heatingEquipment || null,
-        welder: formData.welder || null,
-        capacitor: formData.capacitor || null,
-        lighting: formData.lighting || null,
-        grounding: formData.grounding || null,
-        internalWiring: formData.internalWiring || null,
-        generator: formData.generator || null,
-        otherEquipment: formData.otherEquipment || null,
-        
-        // 측정개소
+        ...formData,
+        signature: signatureData,
         measurements: formData.measurements.map(m => ({
           measurementNumber: m.measurementNumber,
-          voltageA: parseFloat(m.voltageA) || 0,
-          currentA: parseFloat(m.currentA) || 0,
-          temperatureA: parseFloat(m.temperatureA) || 0,
-          voltageB: parseFloat(m.voltageB) || 0,
-          currentB: parseFloat(m.currentB) || 0,
-          temperatureB: parseFloat(m.temperatureB) || 0,
-          voltageC: parseFloat(m.voltageC) || 0,
-          currentC: parseFloat(m.currentC) || 0,
-          temperatureC: parseFloat(m.temperatureC) || 0,
-          voltageN: parseFloat(m.voltageN) || 0,
-          currentN: parseFloat(m.currentN) || 0,
-          temperatureN: parseFloat(m.temperatureN) || 0
-        })),
-        
-        // 특이사항
-        specialNotes: formData.specialNotes || '',
-        
-        // 서명
-        signature: signatureData
+          voltageA: m.voltageA || '',
+          currentA: m.currentA || '',
+          temperatureA: m.temperatureA || '',
+          voltageB: m.voltageB || '',
+          currentB: m.currentB || '',
+          temperatureB: m.temperatureB || '',
+          voltageC: m.voltageC || '',
+          currentC: m.currentC || '',
+          temperatureC: m.temperatureC || '',
+          voltageN: m.voltageN || '',
+          currentN: m.currentN || '',
+          temperatureN: m.temperatureN || ''
+        }))
       };
 
-      // FormData에 inspectionData 추가
-      formDataObj.append('inspectionData', JSON.stringify(inspectionData));
-      
-      // 이미지 파일들 추가
-      images.forEach(image => {
-        formDataObj.append('images', image.file);
-      });
+      // 이미지 처리
+      const newImages = images.filter(img => img.isNew && img.file);
+      const existingImages = images
+        .filter(img => !img.isNew && img.name)
+        .map(img => img.name);
 
-      const response = await fetch('http://localhost:8080/api/inspections', {
-        method: 'POST',
+      // inspectionData에 이미지 정보 추가
+      inspectionData.images = existingImages;
+
+      formDataObj.append('inspectionData', JSON.stringify(inspectionData));
+
+      // 새 이미지만 FormData에 추가
+      if (newImages.length > 0) {
+        newImages.forEach(image => {
+          formDataObj.append('images', image.file);
+        });
+      }
+
+      const url = isEdit 
+        ? `http://localhost:8080/api/inspections/${inspectionId}`
+        : 'http://localhost:8080/api/inspections';
+
+
+      const response = await fetch(url, {
+        method: isEdit ? 'PUT' : 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
         body: formDataObj
       });
 
       if (!response.ok) {
-        throw new Error('점검 데이터 저장에 실패했습니다.');
+        const errorText = await response.text();
+        console.error('Server Error:', errorText);
+        throw new Error(isEdit ? '점검 데이터 수정에 실패했습니다.' : '점검 데이터 저장에 실패했습니다.');
       }
 
       const result = await response.json();
-      navigate(`/inspection/${result}`);
+      navigate(`/inspection/${isEdit ? inspectionId : result}`);
     } catch (error) {
       console.error('Error:', error);
       alert(error.message);
@@ -260,6 +302,7 @@ const InspectionForm = () => {
     });
   };
 
+  // 이미지 업로드 핸들러
   const handleImageUpload = (event) => {
     const files = Array.from(event.target.files);
     
@@ -267,16 +310,25 @@ const InspectionForm = () => {
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onload = (e) => {
-          setImages(prev => [...prev, {
-            file: file,
-            preview: e.target.result
-          }]);
+          // 중복 체크 추가
+          const isDuplicate = images.some(img => 
+            img.file && img.file.name === file.name
+          );
+          
+          if (!isDuplicate) {
+            setImages(prev => [...prev, {
+              file: file,
+              preview: e.target.result,
+              isNew: true
+            }]);
+          }
         };
         reader.readAsDataURL(file);
       }
     });
   };
 
+  // 이미지 제거 핸들러
   const handleRemoveImage = (index) => {
     setImages(prev => prev.filter((_, i) => i !== index));
   };
@@ -303,7 +355,7 @@ const InspectionForm = () => {
             textAlign: 'center'
           }}
         >
-          점검표 작성
+          {isEdit ? '점검 내용 수정' : '점검 시작하기'}
         </Typography>
       </Box>
       <Paper sx={{ p: 2, backgroundColor: '#FFFFFF' }}>

@@ -15,7 +15,9 @@ import {
   DialogContent,
   TextField,
   DialogActions,
-  Button
+  Button,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import AssignmentIcon from '@mui/icons-material/Assignment';
@@ -27,6 +29,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import NotificationsIcon from '@mui/icons-material/Notifications';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 const Sidebar = () => {
   const [open, setOpen] = useState(false);
@@ -36,16 +39,36 @@ const Sidebar = () => {
     password: ''
   });
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')));
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
   const navigate = useNavigate();
 
+  // 사용자 권한 확인 (ADMIN, MANAGER, USER)
+  const userRole = localStorage.getItem('role')?.toUpperCase();
+  const isAdminOrManager = userRole === 'ADMIN' || userRole === 'MANAGER';
+
+  // 메뉴 아이템 필터링
   const menuItems = [
+    // 모든 사용자가 볼 수 있는 메뉴
     { text: '홈', icon: <HomeIcon />, path: '/' },
-    { text: '점검 시작하기', icon: <AssignmentIcon />, path: '/inspection' },
-    { text: '점검 목록', path: '/inspections', icon: <ListAltIcon />},
+    { text: '점검 시작하기', icon: <AssignmentIcon />, path: '/inspection', requireAuth: true },
+    { text: '점검 목록', path: '/inspections', icon: <ListAltIcon />, requireAuth: true },
     { text: '공지사항', icon: <NotificationsIcon />, path: '/notices' },
     { text: '문의사항', icon: <QuestionAnswerIcon />, path: '/inquiries' },
-    { text: '업체 관리', icon: <BusinessIcon />, path: '/companies' },
-    { text: '사용자 관리', icon: <PeopleIcon />, path: '/users' },
+
+    // ADMIN과 MANAGER만 볼 수 있는 메뉴
+    ...(isAdminOrManager ? [
+      { text: '업체 관리', icon: <BusinessIcon />, path: '/companies' },
+      { text: '사용자 관리', icon: <PeopleIcon />, path: '/users' },
+      {
+        icon: <SettingsIcon />,
+        text: '설정',
+        path: '/settings/dashboard',
+      }
+    ] : [])
   ];
 
   const toggleDrawer = (open) => (event) => {
@@ -58,6 +81,10 @@ const Sidebar = () => {
   const handleNavigate = (path) => {
     navigate(path);
     setOpen(false);
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
   };
 
   const handleLogin = async () => {
@@ -75,9 +102,6 @@ const Sidebar = () => {
 
       if (response.ok) {
         const data = await response.json();
-        // console.log('Login response:', data);  // 응답 데이터 구조 확인
-        
-        // 응답 구조에 맞게 수정
         localStorage.setItem('token', data.token);
         localStorage.setItem('userId', data.user.userId);
         localStorage.setItem('role', data.user.role);
@@ -85,22 +109,84 @@ const Sidebar = () => {
         localStorage.setItem('user', JSON.stringify(data.user));
         setUser(data.user);
         setLoginDialogOpen(false);
+
+        // 로그인 성공 메시지
+        setSnackbar({
+          open: true,
+          message: '로그인되었습니다.',
+          severity: 'success'
+        });
       } else {
-        alert('로그인에 실패했습니다.');
+        setSnackbar({
+          open: true,
+          message: '로그인에 실패했습니다.',
+          severity: 'error'
+        });
       }
     } catch (error) {
       console.error('로그인 실패:', error);
-      alert('로그인 중 오류가 발생했습니다.');
+      setSnackbar({
+        open: true,
+        message: '로그인 중 오류가 발생했습니다.',
+        severity: 'error'
+      });
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        await fetch('http://localhost:8080/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      }
+
+      // 로컬 스토리지 초기화
+      localStorage.clear();
+      
+      // 상태 초기화
+      setUser(null);
+      
+      // 로그인 폼 초기화 추가
+      resetLoginForm();
+      
+      // 로그아웃 성공 메시지
+      setSnackbar({
+        open: true,
+        message: '로그아웃되었습니다.',
+        severity: 'success'
+      });
+      
+    } catch (error) {
+      console.error('로그아웃 실패:', error);
+      setSnackbar({
+        open: true,
+        message: '로그아웃 중 오류가 발생했습니다.',
+        severity: 'error'
+      });
+    }
   };
 
   const handleMenuClick = (item) => {
+    // 로그인 필요한 메뉴 체크
+    if (item.requireAuth) {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setSnackbar({
+          open: true,
+          message: '로그인 후 이용해 주세요.',
+          severity: 'warning'
+        });
+        setOpen(false);  // 사이드바 닫기
+        return;
+      }
+    }
+
+    // 기존 로직
     if (item.text === '로그인/로그아웃') {
       if (user) {
         handleLogout();
@@ -111,6 +197,20 @@ const Sidebar = () => {
       handleNavigate(item.path);
     }
     setOpen(false);
+  };
+
+  // 로그인 입력 필드 초기화 함수
+  const resetLoginForm = () => {
+    setLoginData({
+      username: '',
+      password: ''
+    });
+  };
+
+  // 로그인 모달 닫기 핸들러
+  const handleCloseLoginDialog = () => {
+    setLoginDialogOpen(false);
+    resetLoginForm();  // 모달 닫을 때 입력 필드 초기화
   };
 
   // 테스트용 API 호출 함수 추가
@@ -132,18 +232,13 @@ const Sidebar = () => {
   return (
     <>
       <IconButton
-        edge="start"
-        color="inherit"
-        aria-label="menu"
         onClick={toggleDrawer(true)}
-        sx={{ 
+        sx={{
           position: 'fixed',
-          left: 16,
           top: 16,
+          left: 16,
           zIndex: 1200,
-          '& .MuiSvgIcon-root': {
-            color: '#2A2A2A'
-          }
+          color: '#1C243A'
         }}
       >
         <MenuIcon />
@@ -173,7 +268,16 @@ const Sidebar = () => {
                 sx={{
                   '&:hover': {
                     bgcolor: 'rgba(75, 119, 216, 0.08)',
-                  }
+                  },
+                  // 로그인 필요한 메뉴 스타일
+                  ...(item.requireAuth && !localStorage.getItem('token') && {
+                    opacity: 0.6,
+                    '&::after': {
+                      content: '"*"',
+                      color: 'warning.main',
+                      ml: 1
+                    }
+                  })
                 }}
               >
                 <ListItemIcon sx={{ color: '#1C243A' }}>
@@ -218,7 +322,10 @@ const Sidebar = () => {
         </Box>
       </Drawer>
 
-      <Dialog open={loginDialogOpen} onClose={() => setLoginDialogOpen(false)}>
+      <Dialog 
+        open={loginDialogOpen} 
+        onClose={handleCloseLoginDialog}
+      >
         <DialogTitle>로그인</DialogTitle>
         <DialogContent>
           <TextField
@@ -240,10 +347,30 @@ const Sidebar = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setLoginDialogOpen(false)}>취소</Button>
+          <Button onClick={handleCloseLoginDialog}>취소</Button>
           <Button onClick={handleLogin}>로그인</Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity}
+          variant="filled"
+          sx={{ 
+            width: '100%',
+            boxShadow: 3,
+            fontSize: '0.95rem'
+          }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 };

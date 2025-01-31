@@ -14,7 +14,9 @@ import {
   Typography,
   Chip,
   Stack,
-  Pagination
+  Pagination,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
@@ -29,6 +31,19 @@ const InquiryList = () => {
   const [selectedInquiry, setSelectedInquiry] = useState(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const itemsPerPage = 5;
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
+
+  // 초기 상태 상수로 정의
+  const initialInquiryState = {
+    inquiryTitle: '',
+    inquiryContent: '',
+    contactNumber: '',
+    images: []
+  };
 
   useEffect(() => {
     fetchInquiries();
@@ -78,6 +93,29 @@ const InquiryList = () => {
     const startIndex = (page - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return filteredInquiries.slice(startIndex, endIndex);
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  const handleAddInquiryClick = () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setSnackbar({
+        open: true,
+        message: '로그인 후 이용해 주세요.',
+        severity: 'warning'
+      });
+      return;
+    }
+    setDialogOpen(true);
+  };
+
+  // 다이얼로그 닫기 핸들러 수정
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    fetchInquiries(); // 목록 새로고침
   };
 
   return (
@@ -179,7 +217,7 @@ const InquiryList = () => {
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => setDialogOpen(true)}
+            onClick={handleAddInquiryClick}
             sx={{
               bgcolor: '#1C243A',
               '&:hover': {
@@ -206,10 +244,7 @@ const InquiryList = () => {
       {/* 문의사항 등록 다이얼로그 */}
       <InquiryDialog
         open={dialogOpen}
-        onClose={() => {
-          setDialogOpen(false);
-          fetchInquiries();
-        }}
+        onClose={handleCloseDialog}
       />
 
       {/* 문의사항 상세 보기 다이얼로그 */}
@@ -228,6 +263,27 @@ const InquiryList = () => {
           }}
         />
       )}
+
+      {/* Snackbar 추가 */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity}
+          variant="filled"
+          sx={{ 
+            width: '100%',
+            boxShadow: 3,
+            fontSize: '0.95rem'
+          }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

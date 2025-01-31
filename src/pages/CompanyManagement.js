@@ -68,6 +68,38 @@ const CompanyManagement = () => {
     }
   };
 
+  // ADMIN 권한 체크
+  const isAdmin = localStorage.getItem('role')?.toUpperCase() === 'ADMIN';
+
+  // 업체 삭제 핸들러
+  const handleDelete = async () => {
+    if (!isAdmin) {
+      alert('관리자만 삭제할 수 있습니다.');
+      return;
+    }
+
+    if (window.confirm('정말 삭제하시겠습니까?')) {
+      try {
+        const response = await fetch(`http://localhost:8080/api/companies/${companyId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        if (response.ok) {
+          alert('업체가 성공적으로 삭제되었습니다.');
+          navigate('/companies'); // 목록으로 이동
+        } else {
+          throw new Error('삭제 실패');
+        }
+      } catch (error) {
+        console.error('Failed to delete company:', error);
+        alert('업체 삭제 중 오류가 발생했습니다.');
+      }
+    }
+  };
+
   return (
     <Box sx={{ p: 2, maxWidth: '430px', margin: '0 auto' }}>
       {/* 헤더 */}
@@ -165,6 +197,24 @@ const CompanyManagement = () => {
               >
                 목록
               </Button>
+              {isAdmin && (
+                <Button 
+                  variant="outlined"
+                  onClick={handleDelete}
+                  sx={{ 
+                    minWidth: '100px',
+                    color: 'error.main',
+                    borderColor: 'error.main',
+                    '&:hover': {
+                      backgroundColor: 'error.light',
+                      borderColor: 'error.dark',
+                      color: 'white'
+                    }
+                  }}
+                >
+                  삭제
+                </Button>
+              )}
             </Box>
           </Stack>
         </form>

@@ -30,6 +30,9 @@ const UserManagement = () => {
   });
   const [companies, setCompanies] = useState([]);
 
+  // ADMIN 권한 체크
+  const isAdmin = localStorage.getItem('role')?.toUpperCase() === 'ADMIN';
+
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -105,6 +108,35 @@ const UserManagement = () => {
     }
   };
 
+  // 사용자 삭제 핸들러
+  const handleDelete = async () => {
+    if (!isAdmin) {
+      alert('관리자만 삭제할 수 있습니다.');
+      return;
+    }
+
+    if (window.confirm('정말 삭제하시겠습니까?')) {
+      try {
+        const response = await fetch(`http://localhost:8080/api/users/${userId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        if (response.ok) {
+          alert('사용자가 성공적으로 삭제되었습니다.');
+          navigate('/users'); // 목록으로 이동
+        } else {
+          throw new Error('삭제 실패');
+        }
+      } catch (error) {
+        console.error('Failed to delete user:', error);
+        alert('사용자 삭제 중 오류가 발생했습니다.');
+      }
+    }
+  };
+
   return (
     <Box sx={{ p: 2, maxWidth: '430px', margin: '0 auto' }}>
       {/* 헤더 */}
@@ -170,6 +202,7 @@ const UserManagement = () => {
               >
                 <MenuItem value="ADMIN">관리자</MenuItem>
                 <MenuItem value="MANAGER">업체담당자</MenuItem>
+                <MenuItem value="USER">사용자</MenuItem>
               </Select>
             </FormControl>
             
@@ -238,6 +271,24 @@ const UserManagement = () => {
               >
                 목록
               </Button>
+              {isAdmin && (
+                <Button 
+                  variant="outlined"
+                  onClick={handleDelete}
+                  sx={{ 
+                    minWidth: '100px',
+                    color: 'error.main',
+                    borderColor: 'error.main',
+                    '&:hover': {
+                      backgroundColor: 'error.light',
+                      borderColor: 'error.dark',
+                      color: 'white'
+                    }
+                  }}
+                >
+                  삭제
+                </Button>
+              )}
             </Box>
           </Stack>
         </form>
