@@ -13,21 +13,27 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 
 
 const ChatBot = () => {
+  // 초기 메시지 추가
+  const initialMessage = {
+    type: 'bot',
+    content: '안녕하세요 👋\n궁금하신 내용이 있으시다면 편하게 문의해 주세요.'
+  };
 
-// 대화 메시지 상태 관리
-// 초기 로드시 localStorage에서 채팅 기록 불러오기
+  // 대화 메시지 상태 관리
   const [messages, setMessages] = useState(() => {
+    // localStorage에서 채팅 기록 불러오기
     const savedMessages = localStorage.getItem('chatMessages');
-    return savedMessages ? JSON.parse(savedMessages) : [];
+    // 저장된 메시지가 있으면 그대로 사용, 없으면 초기 메시지만 표시
+    return savedMessages ? JSON.parse(savedMessages) : [initialMessage];
   });
-
-// 대화 메시지 변경 시 localStorage에 저장
-  useEffect(() => {
-    localStorage.setItem('chatMessages', JSON.stringify(messages));
-  }, [messages]);
 
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // 대화 메시지 변경 시 localStorage에 저장
+  useEffect(() => {
+    localStorage.setItem('chatMessages', JSON.stringify(messages));
+  }, [messages]);
 
   // 메시지 전송 처리
   const handleSendMessage = async () => {
@@ -76,7 +82,7 @@ const ChatBot = () => {
   // 새 대화 시작 버튼
   const handleNewChat = () => {
     if (window.confirm('새로운 대화를 시작하시겠습니까?')) {
-      setMessages([]);
+      setMessages([initialMessage]);  // 초기 메시지만 남기고 초기화
       localStorage.removeItem('chatMessages');
     }
   };
@@ -156,7 +162,8 @@ const ChatBot = () => {
                 borderRadius: message.type === 'user' 
                   ? '20px 20px 5px 20px'
                   : '20px 20px 20px 5px',
-                boxShadow: 'none'
+                boxShadow: 'none',
+                whiteSpace: 'pre-line'  // 줄바꿈 지원
               }}
             >
               <Typography 

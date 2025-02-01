@@ -10,6 +10,7 @@ import './App.css';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { StyledEngineProvider } from '@mui/material/styles';
+import ScheduleManagement from './pages/ScheduleManagement';
 
 // 지연 로딩할 컴포넌트들
 const Settings = React.lazy(() => import('./components/settings/Settings'));
@@ -76,6 +77,7 @@ function App() {
                   <Route path="/inquiries" element={<InquiryList />} />
                   <Route path="/settings/*" element={<Settings />}/>
                   <Route path="/customer/*" element={<CustomerCenter />} />
+                  <Route path="/schedule-management" element={<ScheduleManagement />} />
                 </Routes>
               </Suspense>
             </Box>

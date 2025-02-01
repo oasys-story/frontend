@@ -79,8 +79,9 @@ const Sidebar = () => {
     },
     // 관리자 메뉴 (ADMIN과 MANAGER만 볼 수 있음)
     ...(isAdminOrManager ? [{
-      category: '관리',
+      category: '일정/관리',
       items: [
+        { text: '일정 관리', path: '/schedule-management' },
         { text: '업체 관리', path: '/companies' },
         { text: '사용자 관리', path: '/users' },
         { text: '설정', path: '/settings/dashboard' }
