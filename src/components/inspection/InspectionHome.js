@@ -24,7 +24,7 @@ const InspectionHome = () => {
       description: '소방 안전 점검을 시작합니다',
       icon: LocalFireDepartmentIcon,
       color: '#F44336',
-      path: '/inspection/fire'
+      path: '/fire-safety-inspection'
     },
     {
       id: 'safety',

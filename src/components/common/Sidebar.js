@@ -53,7 +53,8 @@ const Sidebar = () => {
       category: '점검',
       items: [
         { text: '점검 시작하기', path: '/inspection', requireAuth: true },
-        { text: '점검 목록', path: '/inspections', requireAuth: true }
+        { text: '전기 점검 목록', path: '/inspections', requireAuth: true },
+        { text: '소방 점검 목록', path: '/fire-safety-inspections', requireAuth: true }
       ]
     },
     // 게시판 메뉴

@@ -32,19 +32,33 @@ const SignatureDialog = ({ open, onClose, onConfirm }) => {
   return (
     <Dialog 
       open={open} 
-      onClose={handleClose}  // 수정된 부분
+      onClose={handleClose}
       maxWidth="sm" 
       fullWidth
       disableEscapeKeyDown={isSaving}
+      PaperProps={{
+        sx: {
+          margin: '16px',
+          width: 'calc(100% - 32px)', // 전체 너비에서 좌우 마진 제외
+          maxWidth: '500px' // 최대 너비 설정
+        }
+      }}
     >
       <DialogTitle>서명해 주세요</DialogTitle>
       <DialogContent>
-        <Box sx={{ border: '1px solid #ccc', mt: 2 }}>
+        <Box 
+          sx={{ 
+            border: '1px solid #ccc', 
+            mt: 2,
+            '& canvas': {
+              width: '100% !important', // 캔버스를 컨테이너에 맞춤
+              height: '200px !important'
+            }
+          }}
+        >
           <SignatureCanvas
-            ref={(ref) => { sigPad = ref }} // 서명 패드 참조 설정
+            ref={(ref) => { sigPad = ref }}
             canvasProps={{
-              width: 500,
-              height: 200,
               className: 'signature-canvas'
             }}
           />
@@ -53,20 +67,20 @@ const SignatureDialog = ({ open, onClose, onConfirm }) => {
       <DialogActions>
         <Button 
           onClick={handleClear}
-          disabled={isSaving}  // 저장 중 비활성화
+          disabled={isSaving}
         >
           지우기
         </Button>
         <Button 
-          onClick={handleClose}  // handleClose 사용
-          disabled={isSaving}  // 저장 중 비활성화
+          onClick={handleClose}
+          disabled={isSaving}
         >
           취소
         </Button>
         <Button 
           onClick={handleSave} 
           variant="contained"
-          disabled={isSaving}  // 저장 중 비활성화
+          disabled={isSaving}
           startIcon={isSaving ? <CircularProgress size={20} /> : null}
         >
           {isSaving ? '저장 중...' : '확인'}

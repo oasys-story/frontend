@@ -176,34 +176,36 @@ const VoiceRecorder = ({ onTranscriptionComplete, label }) => {
 
   return (
     <Tooltip title={getTooltipTitle()}>
-      <IconButton
-        size="small"
-        color={isRecording ? 'error' : 'primary'}
-        onClick={isRecording ? stopRecording : startRecording}
-        disabled={isProcessing}
-        sx={{
-          animation: isRecording ? 'pulse 1.5s infinite' : 'none',
-          '@keyframes pulse': {
-            '0%': {
-              opacity: 1,
-            },
-            '50%': {
-              opacity: 0.5,
-            },
-            '100%': {
-              opacity: 1,
-            },
-          }
-        }}
-      >
-        {isProcessing ? (
-          <CircularProgress size={20} />
-        ) : isRecording ? (
-          <StopCircleIcon fontSize="small" />
-        ) : (
-          <MicIcon fontSize="small" />
-        )}
-      </IconButton>
+      <span>
+        <IconButton
+          size="small"
+          color={isRecording ? 'error' : 'primary'}
+          onClick={isRecording ? stopRecording : startRecording}
+          disabled={isProcessing}
+          sx={{
+            animation: isRecording ? 'pulse 1.5s infinite' : 'none',
+            '@keyframes pulse': {
+              '0%': {
+                opacity: 1,
+              },
+              '50%': {
+                opacity: 0.5,
+              },
+              '100%': {
+                opacity: 1,
+              },
+            }
+          }}
+        >
+          {isProcessing ? (
+            <CircularProgress size={20} />
+          ) : isRecording ? (
+            <StopCircleIcon fontSize="small" />
+          ) : (
+            <MicIcon fontSize="small" />
+          )}
+        </IconButton>
+      </span>
     </Tooltip>
   );
 };

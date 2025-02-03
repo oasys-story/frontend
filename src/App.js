@@ -11,6 +11,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { StyledEngineProvider } from '@mui/material/styles';
 import ScheduleManagement from './pages/ScheduleManagement';
+import FireSafetyInspectionForm from './components/fireSafetyInspection/FireSafetyInspectionForm';
 
 // 지연 로딩할 컴포넌트들
 const Settings = React.lazy(() => import('./components/settings/Settings'));
@@ -27,6 +28,9 @@ const NoticeList = React.lazy(() => import('./components/notice/NoticeList'));
 const InquiryList = React.lazy(() => import('./components/inquiry/InquiryList'));
 const InspectionHome = React.lazy(() => import('./components/inspection/InspectionHome'));
 const CustomerCenter = React.lazy(() => import('./components/customer/CustomerCenter'));
+const FireSafetyInspectionResult = React.lazy(() => import('./components/fireSafetyInspection/FireSafetyInspectionResult'));
+const FireSafetyInspectionList = React.lazy(() => import('./components/fireSafetyInspection/FireSafetyInspectionList'));
+const FireSafetyInspectionEdit = React.lazy(() => import('./components/fireSafetyInspection/FireSafetyInspectionEdit'));
 
 // 로딩 컴포넌트
 const LoadingFallback = () => (
@@ -78,6 +82,10 @@ function App() {
                   <Route path="/settings/*" element={<Settings />}/>
                   <Route path="/customer/*" element={<CustomerCenter />} />
                   <Route path="/schedule-management" element={<ScheduleManagement />} />
+                  <Route path="/fire-safety-inspection" element={<FireSafetyInspectionForm />} />
+                  <Route path="/fire-safety-inspection/edit/:id" element={<FireSafetyInspectionForm />} />
+                  <Route path="/fire-safety-inspection/:id" element={<FireSafetyInspectionResult />} />
+                  <Route path="/fire-safety-inspections" element={<FireSafetyInspectionList />} />
                 </Routes>
               </Suspense>
             </Box>
