@@ -5,7 +5,6 @@ import {
   IconButton,
   List,
   ListItem,
-  ListItemIcon,
   ListItemText,
   Box,
   Divider,
@@ -20,17 +19,6 @@ import {
   Alert
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import BusinessIcon from '@mui/icons-material/Business';
-import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
-import PeopleIcon from '@mui/icons-material/People';
-import HomeIcon from '@mui/icons-material/Home';
-import PersonIcon from '@mui/icons-material/Person';
-import LogoutIcon from '@mui/icons-material/Logout';
-import ListAltIcon from '@mui/icons-material/ListAlt';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import SettingsIcon from '@mui/icons-material/Settings';
-import SupportIcon from '@mui/icons-material/Support';
 
 const Sidebar = () => {
   const [open, setOpen] = useState(false);
@@ -253,10 +241,13 @@ const Sidebar = () => {
         onClick={toggleDrawer(true)}
         sx={{
           position: 'fixed',
-          top: 16,
-          left: 16,
+          top: '16px',
+          left: '16px',
           zIndex: 1200,
-          color: '#1C243A'
+          color: '#1C243A',
+          '@media (min-width: 430px)': {
+            left: 'calc((100% - 430px) / 2 + 16px)'
+          }
         }}
       >
         <MenuIcon />
@@ -266,8 +257,23 @@ const Sidebar = () => {
         anchor="left"
         open={open}
         onClose={toggleDrawer(false)}
+        PaperProps={{
+          sx: {
+            width: '70%',  // 모바일에서는 화면의 80%
+            maxWidth: '320px',  // 최대 너비 제한
+            '@media (min-width: 430px)': {
+              left: 'calc((100% - 430px) / 2)',  // 모바일 컨테이너 내부에 위치
+              borderRight: '1px solid rgba(0, 0, 0, 0.12)'
+            }
+          }
+        }}
+        sx={{
+          '& .MuiDrawer-paper': {
+            boxSizing: 'border-box',
+          },
+        }}
       >
-        <Box sx={{ width: 250 }} role="presentation">
+        <Box sx={{ width: '100%' }} role="presentation">
           <Box sx={{ p: 2, bgcolor: '#1C243A' }}>
             <Typography variant="h6" sx={{ color: 'white' }}>
               AS 센터

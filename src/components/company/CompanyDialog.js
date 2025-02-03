@@ -102,7 +102,7 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
             
             <TextField
               fullWidth
-              label="주소"
+              label="메모"
               name="address"
               value={companyData.address}
               onChange={handleChange}

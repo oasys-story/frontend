@@ -22,22 +22,55 @@ const InspectionList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredInspections, setFilteredInspections] = useState([]);
   const [page, setPage] = useState(1);
+  const [currentUser, setCurrentUser] = useState(null);
   const itemsPerPage = 10;
   const navigate = useNavigate();
 
+  // 현재 로그인한 사용자 정보 조회
   useEffect(() => {
-    fetchInspections();
+    const fetchCurrentUser = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('http://localhost:8080/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (response.ok) {
+          const userData = await response.json();
+          setCurrentUser(userData);
+          fetchInspections(userData); // 사용자 정보를 가지고 점검 목록 조회
+        }
+      } catch (error) {
+        console.error('사용자 정보 조회 실패:', error);
+      }
+    };
+
+    fetchCurrentUser();
   }, []);
 
   useEffect(() => {
-    const filtered = inspections.filter(inspection =>
-      inspection.managerName?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    let filtered = inspections;
+
+    // USER 권한일 경우 해당 회사의 점검 목록만 필터링
+    if (currentUser?.role === 'USER' && currentUser?.companyId) {
+      filtered = inspections.filter(inspection => 
+        inspection.companyId === currentUser.companyId
+      );
+    }
+
+    // 검색어로 추가 필터링
+    if (searchTerm) {
+      filtered = filtered.filter(inspection =>
+        inspection.managerName?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
     setFilteredInspections(filtered);
     setPage(1);
-  }, [searchTerm, inspections]);
+  }, [searchTerm, inspections, currentUser]);
 
-  const fetchInspections = async () => {
+  const fetchInspections = async (user) => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -54,10 +87,15 @@ const InspectionList = () => {
 
       if (response.ok) {
         const data = await response.json();
-        // console.log('API 응답 데이터:', data); // API 응답 확인용
         const inspectionsArray = Array.isArray(data) ? data : data.content || [];
-        setInspections(inspectionsArray);
-        setFilteredInspections(inspectionsArray);
+        
+        // USER 권한일 경우 해당 회사의 점검 목록만 필터링
+        const filteredArray = user?.role === 'USER' && user?.companyId
+          ? inspectionsArray.filter(inspection => inspection.companyId === user.companyId)
+          : inspectionsArray;
+
+        setInspections(filteredArray);
+        setFilteredInspections(filteredArray);
       } else {
         console.error('API 호출 실패:', response.status);
       }

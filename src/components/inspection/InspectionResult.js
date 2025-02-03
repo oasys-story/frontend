@@ -6,8 +6,6 @@ import {
   Button,
   CircularProgress,
   Chip,
-  Divider,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -19,10 +17,6 @@ import {
   ImageList,
   ImageListItem
 } from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import SendIcon from '@mui/icons-material/Send';
-import HomeIcon from '@mui/icons-material/Home';
-import ListIcon from '@mui/icons-material/List';
 import SignatureDialog from './SignatureDialog';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import { PDFDownloadLink } from '@react-pdf/renderer';
@@ -674,7 +668,7 @@ const InspectionResult = () => {
             >
               수정
             </Button>
-            <Button
+            {/* <Button
               variant="outlined"
               onClick={handleDelete}
               sx={{ 
@@ -688,7 +682,7 @@ const InspectionResult = () => {
               }}
             >
               삭제
-            </Button>
+            </Button> */}
           </>
         )}
       </Box>

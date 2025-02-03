@@ -39,11 +39,30 @@ import VoiceRecorder from './VoiceRecorder';
 
 const steps = ['기본 정보', '기본사항', '점검내역', '측정개소', '특이사항'];
 
+// 점검항목 상수 정의
+const INSPECTION_ITEMS = [
+  { id: 'wiringInlet', label: '인입구배선' },
+  { id: 'distributionPanel', label: '분전반' },
+  { id: 'moldedCaseBreaker', label: '배선용차단기' },
+  { id: 'earthLeakageBreaker', label: '누전차단기' },
+  { id: 'switchGear', label: '개폐기' },
+  { id: 'wiring', label: '배선' },
+  { id: 'motor', label: '전동기' },
+  { id: 'heatingEquipment', label: '가열장치' },
+  { id: 'welder', label: '용접기' },
+  { id: 'capacitor', label: '콘덴서' },
+  { id: 'lighting', label: '조명설비' },
+  { id: 'grounding', label: '접지설비' },
+  { id: 'internalWiring', label: '옥내배선' },
+  { id: 'generator', label: '발전기' },
+  { id: 'otherEquipment', label: '기타설비' }
+];
+
 /* 점검 폼 컴포넌트 */
 const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = null }) => {
   const navigate = useNavigate();
   const [activeStep, setActiveStep] = useState(0);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(() => ({
     companyId: '',
     inspectionDate: null,
     managerName: '',
@@ -59,21 +78,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
     inspectionCount: '',
     
     // 점검내역 필드
-    wiringInlet: '',
-    distributionPanel: '',
-    moldedCaseBreaker: '',
-    earthLeakageBreaker: '',
-    switchGear: '',
-    wiring: '',
-    motor: '',
-    heatingEquipment: '',
-    welder: '',
-    capacitor: '',
-    lighting: '',
-    grounding: '',
-    internalWiring: '',
-    generator: '',
-    otherEquipment: '',
+    ...Object.fromEntries(INSPECTION_ITEMS.map(item => [item.id, 'O'])),
     
     // 측정개소
     measurements: [
@@ -88,13 +93,41 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
     
     // 특이사항
     specialNotes: ''
-  });
+  }));
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [signatureDialogOpen, setSignatureDialogOpen] = useState(false);
   const [signature, setSignature] = useState(null);
   const [companies, setCompanies] = useState([]);
   const [images, setImages] = useState([]);
   const fileInputRef = useRef(null);
+
+  // 새로 작성할 때만 현재 사용자 정보 가져오기
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      // 수정 모드가 아닐 때만 실행
+      if (!isEdit) {
+        try {
+          const token = localStorage.getItem('token');
+          const response = await fetch('http://localhost:8080/api/auth/me', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          if (response.ok) {
+            const userData = await response.json();
+            setFormData(prev => ({
+              ...prev,
+              managerName: userData.fullName || ''
+            }));
+          }
+        } catch (error) {
+          console.error('사용자 정보 조회 실패:', error);
+        }
+      }
+    };
+
+    fetchCurrentUser();
+  }, [isEdit]); // isEdit이 변경될 때마다 실행
 
   // 수정 모드일 때 초기 데이터 설정
   useEffect(() => {
@@ -111,21 +144,23 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
         contractCapacity: initialData.contractCapacity || '',
         inspectionType: initialData.inspectionType || '',
         inspectionCount: initialData.inspectionCount || '',
-        wiringInlet: initialData.wiringInlet || '',
-        distributionPanel: initialData.distributionPanel || '',
-        moldedCaseBreaker: initialData.moldedCaseBreaker || '',
-        earthLeakageBreaker: initialData.earthLeakageBreaker || '',
-        switchGear: initialData.switchGear || '',
-        wiring: initialData.wiring || '',
-        motor: initialData.motor || '',
-        heatingEquipment: initialData.heatingEquipment || '',
-        welder: initialData.welder || '',
-        capacitor: initialData.capacitor || '',
-        lighting: initialData.lighting || '',
-        grounding: initialData.grounding || '',
-        internalWiring: initialData.internalWiring || '',
-        generator: initialData.generator || '',
-        otherEquipment: initialData.otherEquipment || '',
+        // 점검내역 필드들 추가
+        wiringInlet: initialData.wiringInlet || 'O',
+        distributionPanel: initialData.distributionPanel || 'O',
+        moldedCaseBreaker: initialData.moldedCaseBreaker || 'O',
+        earthLeakageBreaker: initialData.earthLeakageBreaker || 'O',
+        switchGear: initialData.switchGear || 'O',
+        wiring: initialData.wiring || 'O',
+        motor: initialData.motor || 'O',
+        heatingEquipment: initialData.heatingEquipment || 'O',
+        welder: initialData.welder || 'O',
+        capacitor: initialData.capacitor || 'O',
+        lighting: initialData.lighting || 'O',
+        grounding: initialData.grounding || 'O',
+        internalWiring: initialData.internalWiring || 'O',
+        generator: initialData.generator || 'O',
+        otherEquipment: initialData.otherEquipment || 'O',
+        // 측정개소 데이터
         measurements: initialData.measurements.map(m => ({
           measurementNumber: m.measurementNumber,
           voltageA: m.voltageA || '',
@@ -149,7 +184,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
         setImages(initialData.images.map(imageName => ({
           preview: `http://localhost:8080/uploads/images/${imageName}`,
           name: imageName,
-          isNew: false  // 기존 이미지 표시
+          isNew: false
         })));
       }
     }
@@ -333,6 +368,11 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
     setImages(prev => prev.filter((_, i) => i !== index));
   };
 
+  // 스텝 클릭 핸들러 수정
+  const handleStepClick = (index) => {
+    setActiveStep(index);  // 제한 없이 모든 단계로 이동 가능
+  };
+
   return ( // 스탭 바 스타일 적용 (vertical=수직 / horizontal =수평)
     <Container maxWidth="sm" disableGutters>
             {/* 헤더 추가 */}
@@ -360,9 +400,21 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
       </Box>
       <Paper sx={{ p: 2, backgroundColor: '#FFFFFF' }}>
         <Stepper activeStep={activeStep} orientation="vertical">
-          {steps.map((label) => (
+          {steps.map((label, index) => (
             <Step key={label}>
-              <StepLabel>{label}</StepLabel>
+              <StepLabel
+                onClick={() => handleStepClick(index)}
+                sx={{
+                  cursor: 'pointer',  // 모든 단계를 클릭 가능하도록
+                  '& .MuiStepLabel-label': {
+                    '&:hover': {
+                      color: '#4B77D8',
+                    }
+                  }
+                }}
+              >
+                {label}
+              </StepLabel>
             </Step>
           ))}
         </Stepper>
@@ -647,23 +699,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
               <Typography variant="h6" gutterBottom>
                 점검내역
               </Typography>
-              {[
-                { id: 'wiringInlet', label: '인입구배선' },
-                { id: 'distributionPanel', label: '분전반' },
-                { id: 'moldedCaseBreaker', label: '배선용차단기' },
-                { id: 'earthLeakageBreaker', label: '누전차단기' },
-                { id: 'switchGear', label: '개폐기' },
-                { id: 'wiring', label: '배선' },
-                { id: 'motor', label: '전동기' },
-                { id: 'heatingEquipment', label: '가열장치' },
-                { id: 'welder', label: '용접기' },
-                { id: 'capacitor', label: '콘덴서' },
-                { id: 'lighting', label: '조명설비' },
-                { id: 'grounding', label: '접지설비' },
-                { id: 'internalWiring', label: '옥내배선' },
-                { id: 'generator', label: '발전기' },
-                { id: 'otherEquipment', label: '기타설비' }
-              ].map(item => (
+              {INSPECTION_ITEMS.map(item => (
                 <Box
                   key={item.id}
                   sx={{
