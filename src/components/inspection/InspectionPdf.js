@@ -1,26 +1,51 @@
 import { Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/renderer';
 
-// 한글 폰트 등록
+// 폰트 등록 부분 수정
 Font.register({
-  family: 'Nanum Gothic',
-  src: 'https://fonts.gstatic.com/ea/nanumgothic/v5/NanumGothic-Regular.ttf'
+  family: 'Pretendard',
+  fonts: [
+    {
+      src: 'https://cdn.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Regular.woff',
+      fontWeight: 400,
+    },
+    {
+      src: 'https://cdn.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Medium.woff',
+      fontWeight: 500,
+    },
+    {
+      src: 'https://cdn.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Bold.woff',
+      fontWeight: 700,
+    }
+  ]
 });
 
 // PDF 스타일 정의
 const styles = StyleSheet.create({
   page: {
     padding: 30,
-    fontFamily: 'Nanum Gothic'
+    backgroundColor: 'white',
+    fontFamily: 'Pretendard',  // 기본 폰트 설정
   },
   header: {
-    fontSize: 22,
+    fontSize: 16,
     textAlign: 'center',
-    marginBottom: 25,
-    fontFamily: 'Nanum Gothic',
-    color: '#1C243A',
-    borderBottom: 2,
-    borderColor: '#1C243A',
-    paddingBottom: 10
+    marginBottom: 20,
+    borderBottom: 1,
+    paddingBottom: 10,
+    fontFamily: 'Pretendard',
+    fontWeight: 700,  // 볼드 처리
+  },
+  section: {
+    marginBottom: 15,
+  },
+  title: {
+    fontSize: 12,
+    backgroundColor: '#1C243A',
+    color: 'white',
+    padding: 5,
+    marginBottom: 5,
+    fontFamily: 'Pretendard',
+    fontWeight: 500,  // 미디엄 처리
   },
   topSection: {
     flexDirection: 'row',
@@ -64,12 +89,12 @@ const styles = StyleSheet.create({
   infoLabel: {
     width: '25%',
     fontSize: 10,
-    fontFamily: 'Nanum Gothic'
+    fontFamily: 'Pretendard',
   },
   infoValue: {
     width: '75%',
     fontSize: 10,
-    fontFamily: 'Nanum Gothic'
+    fontFamily: 'Pretendard',
   },
   table: {
     marginTop: 0,
@@ -85,7 +110,7 @@ const styles = StyleSheet.create({
   },
   tableHeader: {
     backgroundColor: '#1C243A',
-    fontFamily: 'Nanum Gothic',
+    fontFamily: 'Pretendard',
     fontSize: 10,
     padding: 5,
     color: 'white'
@@ -105,20 +130,6 @@ const styles = StyleSheet.create({
     borderRightStyle: 'solid',
     textAlign: 'center'
   },
-  section: {
-    margin: '10 0',
-    padding: 0,
-    flexGrow: 1
-  },
-  title: {
-    fontSize: 16,
-    marginBottom: 10,
-    fontFamily: 'Nanum Gothic',
-    backgroundColor: '#1C243A',
-    color: 'white',
-    padding: '8 15',  // 상하 8, 좌우 15
-    marginBottom: 15
-  },
   row: {
     flexDirection: 'row',
     borderBottomWidth: 1,
@@ -129,12 +140,12 @@ const styles = StyleSheet.create({
   label: {
     width: '30%',
     fontSize: 12,
-    fontFamily: 'Nanum Gothic'
+    fontFamily: 'Pretendard'
   },
   value: {
     width: '70%',
     fontSize: 12,
-    fontFamily: 'Nanum Gothic'
+    fontFamily: 'Pretendard'
   },
   measurementSection: {
     marginBottom: 5
@@ -142,44 +153,50 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     marginBottom: 5,
-    fontFamily: 'Nanum Gothic'
+    fontFamily: 'Pretendard'
+  },
+  measurementTablesContainer: {
+    flexDirection: 'row',  // 가로 배치
+    justifyContent: 'space-between',  // 테이블 간격 균등 분배
+    width: '100%',
   },
   measurementTable: {
-    marginTop: 5,
+    width: '32%',  // 3개 테이블이 들어갈 수 있도록 너비 조정
     border: 1,
-    borderColor: '#000000',
-    width: '100%'  // 테이블 너비를 100%로 수정
+    borderColor: '#000',
+  },
+  measurementHeaderRow: {
+    flexDirection: 'row',
+    borderBottom: 1,
+    borderColor: '#000',
   },
   measurementRow: {
     flexDirection: 'row',
     borderBottom: 1,
-    borderColor: '#000000'
+    borderColor: '#000',
+    height: 25,  // 행 높이 조정
   },
   measurementHeaderCell: {
     width: '25%',
-    padding: 5,
-    fontSize: 9,
-    backgroundColor: '#1C243A',
-    color: 'white',
+    padding: 2,
+    fontSize: 7,
     borderRight: 1,
-    borderColor: '#000000',
-    textAlign: 'center'
+    borderColor: '#000',
+    textAlign: 'center',
   },
   measurementCell: {
     width: '25%',
-    padding: 5,
-    fontSize: 9,
+    padding: 2,
+    fontSize: 7,
     borderRight: 1,
-    borderColor: '#000000',
-    textAlign: 'center'
-  },
-  measurementLastCell: {
-    width: '25%',
-    padding: 5,
-    fontSize: 9,
+    borderColor: '#000',
     textAlign: 'center',
-    backgroundColor: '#1C243A',  // 헤더셀의 경우 배경색 추가
-    color: 'white'  // 헤더셀의 경우 텍스트 색상 추가
+  },
+  measurementLabel: {
+    position: 'absolute',
+    top: -15,
+    left: 0,
+    fontSize: 8,
   },
   imageGrid: {
     flexDirection: 'row',
@@ -201,28 +218,55 @@ const styles = StyleSheet.create({
     marginBottom: 10
   },
   checklistTable: {
-    marginTop: 0,
-    display: 'flex',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    border: 1,
-    borderColor: '#000000'
+    width: '100%',
+    borderTop: 1,
+    borderLeft: 1,
+    borderColor: '#000',
   },
-  checklistItem: {
-    width: '25%',
-    padding: 8,
+  checklistRow: {
+    flexDirection: 'row',
+    height: 60,  // 고정 높이 설정
+  },
+  firstColumn: {
+    width: '10%',
     borderRight: 1,
     borderBottom: 1,
-    borderColor: '#1C243A',
-    fontSize: 9,
-    backgroundColor: '#ffffff'
+    borderColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+    fontSize: 7,  // 글자 크기 축소
+    fontFamily: 'Pretendard',
+  },
+  itemColumn: {
+    width: '6%',
+    borderRight: 1,
+    borderBottom: 1,
+    borderColor: '#000',
+  },
+  itemHeader: {
+    height: '50%',
+    borderBottom: 1,
+    borderColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+    fontSize: 6,
+    padding: 2,
+    fontFamily: 'Pretendard',
+  },
+  itemValue: {
+    height: '50%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    fontSize: 8,
+    fontFamily: 'Pretendard',
+  },
+  checklistHeader: {
+    fontSize: 7,
+    textAlign: 'center',
   },
   checklistValue: {
+    fontSize: 10,
     textAlign: 'center',
-    marginTop: 5,
-    fontSize: 12,
-    color: '#1C243A',
-    fontWeight: 'bold'
   },
   specialNotesSection: {
     margin: '10 0',
@@ -239,13 +283,85 @@ const styles = StyleSheet.create({
     border: 1,
     borderColor: '#1C243A',
     borderRadius: 3
+  },
+  basicInfoTable: {
+    marginTop: 5,
+    width: '100%',
+  },
+  basicInfoRow: {
+    flexDirection: 'row',
+    borderTop: 1,
+    borderLeft: 1,
+    borderRight: 1,
+    borderBottom: 1,
+    borderColor: '#000',
+    height: 30,
+  },
+  basicInfoCell: {
+    flex: 1,
+    borderRight: 1,
+    borderColor: '#000',
+    padding: 2,
+  },
+  basicInfoText: {
+    fontSize: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  unitText: {
+    fontSize: 8,
+    marginLeft: 2,
+  },
+  safetyEducationSection: {
+    border: 1,
+    borderColor: '#000',
+  },
+  safetyHeader: {
+    borderBottom: 1,
+    borderColor: '#000',
+    padding: 5,
+  },
+  safetyHeaderText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    fontFamily: 'Pretendard',
+  },
+  safetyContent: {
+    padding: 5,
+  },
+  safetyList: {
+    marginBottom: 10,
+  },
+  safetyItem: {
+    fontSize: 9,
+    marginBottom: 3,
+    fontFamily: 'Pretendard',
+  },
+  opinionRow: {
+    flexDirection: 'row',
+    borderTop: 1,
+    borderColor: '#000',
+  },
+  opinionLabel: {
+    width: '15%',
+    borderRight: 1,
+    borderColor: '#000',
+    padding: 5,
+    fontSize: 9,
+    fontFamily: 'Pretendard',
+  },
+  opinionContent: {
+    flex: 1,
+    padding: 5,
+    fontSize: 9,
+    fontFamily: 'Pretendard',
+    minHeight: 50,  // 의견 작성 공간 확보
   }
 });
 
 // PDF 문서 컴포넌트
 const InspectionPDF = ({ data, checklistLabels, getStatusText }) => (
   <Document>
-    {/* 첫 번째 페이지 */}
     <Page size="A4" style={styles.page}>
       <Text style={styles.header}>전기설비 점검 결과서</Text>
 
@@ -291,36 +407,48 @@ const InspectionPDF = ({ data, checklistLabels, getStatusText }) => (
       {/* 기본사항 섹션 */}
       <View style={styles.section}>
         <Text style={styles.title}>1. 기본사항</Text>
-        <View style={styles.table}>
-          <View style={[styles.tableRow, styles.tableHeader]}>
-            <Text style={styles.tableCellWithBorder}>구분</Text>
-            <Text style={styles.tableCell}>수치</Text>
-            <Text style={styles.tableCellWithBorder}>구분</Text>
-            <Text style={styles.tableCell}>수치</Text>
+        <View style={styles.basicInfoTable}>
+          <View style={styles.basicInfoRow}>
+            {/* 첫 번째 줄 */}
+            <View style={[styles.basicInfoCell, { flex: 2 }]}>
+              <View style={styles.basicInfoText}>
+                <Text>수전전압/용량</Text>
+                <Text>{data.faucetVoltage}　V / {data.faucetCapacity}　kW</Text>
+              </View>
+            </View>
+            <View style={[styles.basicInfoCell, { flex: 2 }]}>
+              <View style={styles.basicInfoText}>
+                <Text>발전전압/용량</Text>
+                <Text>{data.generationVoltage}　V / {data.generationCapacity}　kW</Text>
+              </View>
+            </View>
+            <View style={[styles.basicInfoCell, { flex: 1 }]}>
+              <View style={styles.basicInfoText}>
+                <Text>태양광</Text>
+                <Text>{data.solarCapacity}　kW</Text>
+              </View>
+            </View>
           </View>
-          <View style={styles.tableRow}>
-            <Text style={styles.tableCell}>수전전압</Text>
-            <Text style={styles.tableCell}>{data.faucetVoltage}V</Text>
-            <Text style={styles.tableCell}>발전전압</Text>
-            <Text style={styles.tableCell}>{data.generationVoltage}V</Text>
-          </View>
-          <View style={styles.tableRow}>
-            <Text style={styles.tableCell}>수전용량</Text>
-            <Text style={styles.tableCell}>{data.faucetCapacity}kW</Text>
-            <Text style={styles.tableCell}>발전용량</Text>
-            <Text style={styles.tableCell}>{data.generationCapacity}kW</Text>
-          </View>
-          <View style={styles.tableRow}>
-            <Text style={styles.tableCell}>태양광</Text>
-            <Text style={styles.tableCell}>{data.solarCapacity}kW</Text>
-            <Text style={styles.tableCell}>계약용량</Text>
-            <Text style={styles.tableCell}>{data.contractCapacity}kW</Text>
-          </View>
-          <View style={styles.tableRow}>
-            <Text style={styles.tableCell}>점검종별</Text>
-            <Text style={styles.tableCell}>{data.inspectionType}</Text>
-            <Text style={styles.tableCell}>점검횟수</Text>
-            <Text style={styles.tableCell}>{data.inspectionCount}회</Text>
+          <View style={styles.basicInfoRow}>
+            {/* 두 번째 줄 */}
+            <View style={[styles.basicInfoCell, { flex: 2 }]}>
+              <View style={styles.basicInfoText}>
+                <Text>계약용량</Text>
+                <Text>{data.contractCapacity}　kW</Text>
+              </View>
+            </View>
+            <View style={[styles.basicInfoCell, { flex: 2 }]}>
+              <View style={styles.basicInfoText}>
+                <Text>점검종별</Text>
+                <Text>{data.inspectionType}</Text>
+              </View>
+            </View>
+            <View style={[styles.basicInfoCell, { flex: 1 }]}>
+              <View style={styles.basicInfoText}>
+                <Text>점검횟수</Text>
+                <Text>{data.inspectionCount}　회</Text>
+              </View>
+            </View>
           </View>
         </View>
       </View>
@@ -329,59 +457,102 @@ const InspectionPDF = ({ data, checklistLabels, getStatusText }) => (
       <View style={styles.section}>
         <Text style={styles.title}>2. 점검내역</Text>
         <View style={styles.checklistTable}>
-          {Object.entries(checklistLabels).map(([key, label]) => (
-            <View style={styles.checklistItem} key={key}>
-              <Text>{label}</Text>
-              <Text style={styles.checklistValue}>{getStatusText(data[key])}</Text>
+          <View style={styles.checklistRow}>
+            <View style={styles.firstColumn}>
+              <Text>저압설비</Text>
             </View>
-          ))}
+            {[
+              { id: 'wiringInlet', label: '인입구\n배선' },
+              { id: 'distributionPanel', label: '배·분\n전반' },
+              { id: 'moldedCaseBreaker', label: '배선용\n차단기' },
+              { id: 'earthLeakageBreaker', label: '누전\n차단기' },
+              { id: 'switchGear', label: '개폐기' },
+              { id: 'wiring', label: '배선' },
+              { id: 'motor', label: '전동기' },
+              { id: 'heatingEquipment', label: '전열\n설비' },
+              { id: 'welder', label: '용접기' },
+              { id: 'capacitor', label: '콘덴서' },
+              { id: 'lighting', label: '조명\n설비' },
+              { id: 'grounding', label: '접지\n설비' },
+              { id: 'internalWiring', label: '구내\n전선로' },
+              { id: 'generator', label: '발전\n설비' },
+              { id: 'otherEquipment', label: '기타\n설비' }
+            ].map((item) => (
+              <View key={item.id} style={styles.itemColumn}>
+                <View style={styles.itemHeader}>
+                  <Text>{item.label}</Text>
+                </View>
+                <View style={styles.itemValue}>
+                  <Text>{data[item.id] || '/'}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
         </View>
       </View>
-    </Page>
 
-    {/* 두 번째 페이지 */}
-    <Page size="A4" style={styles.page}>
       {/* 측정개소 섹션 */}
       <View style={styles.section}>
         <Text style={styles.title}>3. 측정개소</Text>
-        {data.measurements.map((measurement, index) => (
-          <View key={index} style={styles.measurementSection}>
-            <Text style={styles.subtitle}>측정개소 {measurement.measurementNumber}</Text>
-            <View style={styles.measurementTable}>
-              <View style={styles.measurementRow}>
-                <Text style={styles.measurementHeaderCell}>구분</Text>
-                <Text style={styles.measurementHeaderCell}>전압(V)</Text>
-                <Text style={styles.measurementHeaderCell}>전류(A)</Text>
-                <Text style={[styles.measurementLastCell, { backgroundColor: '#1C243A', color: 'white' }]}>온도(℃)</Text>
-              </View>
-              {['A', 'B', 'C', 'N'].map((phase) => (
-                // 데이터가 있는 경우에만 행을 렌더링
-                (measurement[`voltage${phase}`] || 
-                 measurement[`current${phase}`] || 
-                 measurement[`temperature${phase}`]) && (
-                  <View style={styles.measurementRow} key={phase}>
-                    <Text style={styles.measurementCell}>{phase === 'N' ? 'N' : `${phase}-`}</Text>
-                    <Text style={styles.measurementCell}>{measurement[`voltage${phase}`] || '-'}</Text>
-                    <Text style={styles.measurementCell}>{measurement[`current${phase}`] || '-'}</Text>
-                    <Text style={styles.measurementCell}>{measurement[`temperature${phase}`] || '-'}</Text>
+        <View style={styles.measurementTablesContainer}>
+          {[1, 2, 3].map((tableIndex) => {
+            const measurement = data.measurements.find(m => m.measurementNumber === tableIndex) || {};
+            
+            return (
+              <View key={tableIndex} style={styles.measurementTable}>
+                <View style={styles.measurementHeaderRow}>
+                  <Text style={styles.measurementHeaderCell}>구분</Text>
+                  <Text style={styles.measurementHeaderCell}>전압(V)</Text>
+                  <Text style={styles.measurementHeaderCell}>전류(A)</Text>
+                  <Text style={[styles.measurementHeaderCell, { borderRight: 0 }]}>온도(℃)</Text>
+                </View>
+                {['A-', 'B-', 'C-', 'N'].map((phase) => (
+                  <View key={phase} style={styles.measurementRow}>
+                    <Text style={styles.measurementCell}>{phase}</Text>
+                    <Text style={styles.measurementCell}>
+                      {measurement[`voltage${phase.charAt(0)}`] || ''}
+                    </Text>
+                    <Text style={styles.measurementCell}>
+                      {measurement[`current${phase.charAt(0)}`] || ''}
+                    </Text>
+                    <Text style={[styles.measurementCell, { borderRight: 0 }]}>
+                      {measurement[`temperature${phase.charAt(0)}`] || ''}
+                    </Text>
                   </View>
-                )
-              ))}
-            </View>
-          </View>
-        ))}
+                ))}
+              </View>
+            );
+          })}
+        </View>
       </View>
 
       {/* 특이사항 섹션 */}
-      {data.specialNotes && (
-        <View style={styles.specialNotesSection}>
-          <Text style={styles.title}>4. 특이사항</Text>
-          <Text style={styles.value}>{data.specialNotes}</Text>
+      <View style={styles.section}>
+        <Text style={styles.title}>4. 안전교육 및 종합의견</Text>
+        <View style={styles.safetyEducationSection}>
+          <View style={styles.safetyHeader}>
+            <Text style={styles.safetyHeaderText}>전기안전교육 및 주의사항</Text>
+          </View>
+          <View style={styles.safetyContent}>
+            <View style={styles.safetyList}>
+              <Text style={styles.safetyItem}>1. 물기에 젖은 손발일 경우 전기기계 기구류의 조작을 금하십시오.</Text>
+              <Text style={styles.safetyItem}>2. 각 기기의 접지선 탈락 여부를 수시로 확인하여 건지감전 사고를 예방하십시오.</Text>
+              <Text style={styles.safetyItem}>3. 전기 담당자 외 임의로 전기기기 조작이나 보수를 금하십시오.</Text>
+              <Text style={styles.safetyItem}>4. 금속제 외함을 갖는 전기기기, 가구 등에는 반드시 누전차단기로 보호하여 주십시오.</Text>
+              <Text style={styles.safetyItem}>5. 일과 종료 후 사용하지 않는 전원 차단기는 개방하십시오.</Text>
+              <Text style={styles.safetyItem}>6. 수, 변전실 출입문에 잠금장치를 하고 전기 담당자 이외 출입을 금하도록 하십시오오.</Text>
+              <Text style={styles.safetyItem}>7. 전기설비의 개·보수 작업은 반드시 정전상태에서 실시하시기 바랍니다.</Text>
+            </View>
+            <View style={styles.opinionRow}>
+              <Text style={styles.opinionLabel}>종합 의견</Text>
+              <Text style={styles.opinionContent}>{data.specialNotes || ''}</Text>
+            </View>
+          </View>
         </View>
-      )}
+      </View>
 
       {/* 이미지 섹션 */}
-      {data.images && data.images.length > 0 && (
+      {/* {data.images && data.images.length > 0 && (
         <View style={styles.imageSection}>
           <Text style={styles.title}>5. 첨부 이미지</Text>
           <View style={styles.imageGrid}>
@@ -394,7 +565,7 @@ const InspectionPDF = ({ data, checklistLabels, getStatusText }) => (
             ))}
           </View>
         </View>
-      )}
+      )} */}
     </Page>
   </Document>
 );
