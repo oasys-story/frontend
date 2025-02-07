@@ -20,6 +20,7 @@ import {
   DialogContent,
   DialogActions,
   DialogContentText,
+  Snackbar,
 } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
@@ -39,6 +40,18 @@ const FireSafetyInspectionForm = () => {
   const [signatureType, setSignatureType] = useState('');
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const fileInputRef = useRef(null);
+  const [formErrors, setFormErrors] = useState({
+    buildingName: false,
+    buildingAddress: false,
+    inspectionDate: false,
+    inspectorName: false,
+    companyName: false
+  });
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'info'
+  });
 
   const [formData, setFormData] = useState({
     writerId: '',
@@ -143,9 +156,31 @@ const FireSafetyInspectionForm = () => {
 
   // 다음 단계로 이동
   const handleNext = () => {
+    // 기본 정보 단계에서만 유효성 검사 실행
+    if (activeStep === 0) {
+      // 유효성 검사
+      const errors = {
+        buildingName: !formData.buildingName?.trim(),
+        buildingAddress: !formData.address?.trim(),
+        inspectionDate: !formData.inspectionDate,
+        inspectorName: !formData.writerId,
+        companyName: !formData.companyId
+      };
+
+      // 에러가 하나라도 있는지 확인
+      if (Object.values(errors).some(error => error)) {
+        setFormErrors(errors);
+        setSnackbar({
+          open: true,
+          message: '필수 입력 항목을 모두 작성해주세요.',
+          severity: 'error'
+        });
+        return;
+      }
+    }
+
     setActiveStep((prevStep) => prevStep + 1);
   };
-
 
   // 이전 단계로 이동
   const handleBack = () => {
@@ -181,7 +216,31 @@ const FireSafetyInspectionForm = () => {
   };
 
   // 최종 제출 처리
-  const handleFinalSubmit = async () => {
+  const handleFinalSubmit = () => {
+    // 기본 정보 유효성 검사
+    const errors = {
+      buildingName: !formData.buildingName?.trim(),
+      buildingAddress: !formData.address?.trim(),
+      inspectionDate: !formData.inspectionDate,
+      inspectorName: !formData.writerId,
+      companyName: !formData.companyId
+    };
+
+    // 에러가 하나라도 있는지 확인
+    if (Object.values(errors).some(error => error)) {
+      setFormErrors(errors);
+      setSnackbar({
+        open: true,
+        message: '기본 정보를 모두 작성해주세요.',
+        severity: 'error'
+      });
+      // 기본 정보 단계로 이동
+      setActiveStep(0);
+      setConfirmDialogOpen(false);
+      return;
+    }
+
+    // 기존 서명 다이얼로그 열기
     setConfirmDialogOpen(false);
     setSignatureDialogOpen(true);
   };
@@ -242,6 +301,33 @@ const FireSafetyInspectionForm = () => {
     }
   };
 
+  // 스텝 이동 함수 수정
+  const handleStepClick = (index) => {
+    // 기본 정보가 모두 입력되었는지 확인
+    if (index > 0) {
+      const errors = {
+        buildingName: !formData.buildingName?.trim(),
+        buildingAddress: !formData.address?.trim(),
+        inspectionDate: !formData.inspectionDate,
+        inspectorName: !formData.writerId,
+        companyName: !formData.companyId
+      };
+
+      if (Object.values(errors).some(error => error)) {
+        setFormErrors(errors);
+        setSnackbar({
+          open: true,
+          message: '기본 정보를 모두 작성해주세요.',
+          severity: 'error'
+        });
+        setActiveStep(0);
+        return;
+      }
+    }
+    
+    setActiveStep(index);
+  };
+
   return (
     <Container maxWidth="sm" disableGutters>
       {/* 헤더 */}
@@ -274,7 +360,7 @@ const FireSafetyInspectionForm = () => {
           {steps.map((label, index) => (
             <Step key={label}>
               <StepLabel
-                onClick={() => setActiveStep(index)}
+                onClick={() => handleStepClick(index)}
                 sx={{
                   cursor: 'pointer',
                   '& .MuiStepLabel-label': {
@@ -297,8 +383,19 @@ const FireSafetyInspectionForm = () => {
               <DatePicker
                 label="점검일자"
                 value={formData.inspectionDate}
-                onChange={(date) => setFormData({...formData, inspectionDate: date})}
-                renderInput={(params) => <TextField {...params} fullWidth margin="normal" />}
+                onChange={(date) => {
+                  setFormData({...formData, inspectionDate: date});
+                  setFormErrors(prev => ({...prev, inspectionDate: false}));
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    fullWidth
+                    error={formErrors.inspectionDate}
+                    helperText={formErrors.inspectionDate ? "점검일자를 선택해주세요" : ""}
+                    required
+                  />
+                )}
               />
             </LocalizationProvider>
 
@@ -306,8 +403,14 @@ const FireSafetyInspectionForm = () => {
               <InputLabel>업체 선택</InputLabel>
               <Select
                 value={formData.companyId}
-                onChange={(e) => setFormData({...formData, companyId: e.target.value})}
+                onChange={(e) => {
+                  setFormData({...formData, companyId: e.target.value});
+                  setFormErrors(prev => ({...prev, companyName: false}));
+                }}
                 label="업체 선택"
+                error={formErrors.companyName}
+                helperText={formErrors.companyName ? "점검업체를 입력해주세요" : ""}
+                required
               >
                 {companies.map((company) => (
                   <MenuItem key={company.companyId} value={company.companyId}>
@@ -322,7 +425,15 @@ const FireSafetyInspectionForm = () => {
               label="건물명"
               margin="normal"
               value={formData.buildingName}
-              onChange={(e) => setFormData({...formData, buildingName: e.target.value})}
+              onChange={(e) => {
+                if (e.target.value.length <= 25) { // 25자 제한
+                  setFormData({...formData, buildingName: e.target.value});
+                  setFormErrors(prev => ({...prev, buildingName: false}));
+                }
+              }}
+              error={formErrors.buildingName}
+              helperText={formErrors.buildingName ? "건물명을 입력해주세요" : ""}
+              required
             />
 
             <TextField
@@ -330,7 +441,15 @@ const FireSafetyInspectionForm = () => {
               label="주소"
               margin="normal"
               value={formData.address}
-              onChange={(e) => setFormData({...formData, address: e.target.value})}
+              onChange={(e) => {
+                if (e.target.value.length <= 200) { // 200자 제한
+                  setFormData({...formData, address: e.target.value});
+                  setFormErrors(prev => ({...prev, buildingAddress: false}));
+                }
+              }}
+              error={formErrors.buildingAddress}
+              helperText={formErrors.buildingAddress ? "주소를 입력해주세요" : ""}
+              required
             />
 
             <TextField
@@ -338,7 +457,11 @@ const FireSafetyInspectionForm = () => {
               label="건물등급"
               margin="normal"
               value={formData.buildingGrade}
-              onChange={(e) => setFormData({...formData, buildingGrade: e.target.value})}
+              onChange={(e) => {
+                if (e.target.value.length <= 10) { // 10자 제한
+                  setFormData({...formData, buildingGrade: e.target.value});
+                }
+              }}
             />
           </Box>
         )}
@@ -353,14 +476,21 @@ const FireSafetyInspectionForm = () => {
               rows={4}
               margin="normal"
               value={formData.fireExtinguisherStatus}
-              onChange={(e) => setFormData({...formData, fireExtinguisherStatus: e.target.value})}
+              onChange={(e) => {
+                if (e.target.value.length <= 3000) {
+                  setFormData({...formData, fireExtinguisherStatus: e.target.value});
+                }
+              }}
+              helperText={`${formData.fireExtinguisherStatus.length} / 3000`}
+              error={formData.fireExtinguisherStatus.length > 3000}
             />
             <VoiceRecorder 
               label="소화설비 상태 음성 입력"
               onTranscriptionComplete={(text) => {
+                const truncatedText = text.slice(0, 3000); // 3000자까지만 저장
                 setFormData(prev => ({
                   ...prev,
-                  fireExtinguisherStatus: text
+                  fireExtinguisherStatus: truncatedText
                 }));
               }}
             />
@@ -372,14 +502,21 @@ const FireSafetyInspectionForm = () => {
               rows={4}
               margin="normal"
               value={formData.fireAlarmStatus}
-              onChange={(e) => setFormData({...formData, fireAlarmStatus: e.target.value})}
+              onChange={(e) => {
+                if (e.target.value.length <= 3000) {
+                  setFormData({...formData, fireAlarmStatus: e.target.value});
+                }
+              }}
+              helperText={`${formData.fireAlarmStatus.length} / 3000`}
+              error={formData.fireAlarmStatus.length > 3000}
             />
             <VoiceRecorder 
               label="경보설비 상태 음성 입력"
               onTranscriptionComplete={(text) => {
+                const truncatedText = text.slice(0, 3000);
                 setFormData(prev => ({
                   ...prev,
-                  fireAlarmStatus: text
+                  fireAlarmStatus: truncatedText
                 }));
               }}
             />
@@ -391,14 +528,21 @@ const FireSafetyInspectionForm = () => {
               rows={4}
               margin="normal"
               value={formData.fireEvacuationStatus}
-              onChange={(e) => setFormData({...formData, fireEvacuationStatus: e.target.value})}
+              onChange={(e) => {
+                if (e.target.value.length <= 3000) {
+                  setFormData({...formData, fireEvacuationStatus: e.target.value});
+                }
+              }}
+              helperText={`${formData.fireEvacuationStatus.length} / 3000`}
+              error={formData.fireEvacuationStatus.length > 3000}
             />
             <VoiceRecorder 
               label="피난구조설비 상태 음성 입력"
               onTranscriptionComplete={(text) => {
+                const truncatedText = text.slice(0, 3000);
                 setFormData(prev => ({
                   ...prev,
-                  fireEvacuationStatus: text
+                  fireEvacuationStatus: truncatedText
                 }));
               }}
             />
@@ -410,14 +554,21 @@ const FireSafetyInspectionForm = () => {
               rows={4}
               margin="normal"
               value={formData.fireWaterStatus}
-              onChange={(e) => setFormData({...formData, fireWaterStatus: e.target.value})}
+              onChange={(e) => {
+                if (e.target.value.length <= 3000) {
+                  setFormData({...formData, fireWaterStatus: e.target.value});
+                }
+              }}
+              helperText={`${formData.fireWaterStatus.length} / 3000`}
+              error={formData.fireWaterStatus.length > 3000}
             />
             <VoiceRecorder 
               label="소화용수설비 상태 음성 입력"
               onTranscriptionComplete={(text) => {
+                const truncatedText = text.slice(0, 3000);
                 setFormData(prev => ({
                   ...prev,
-                  fireWaterStatus: text
+                  fireWaterStatus: truncatedText
                 }));
               }}
             />
@@ -429,14 +580,21 @@ const FireSafetyInspectionForm = () => {
               rows={4}
               margin="normal"
               value={formData.fireFightingStatus}
-              onChange={(e) => setFormData({...formData, fireFightingStatus: e.target.value})}
+              onChange={(e) => {
+                if (e.target.value.length <= 3000) {
+                  setFormData({...formData, fireFightingStatus: e.target.value});
+                }
+              }}
+              helperText={`${formData.fireFightingStatus.length} / 3000`}
+              error={formData.fireFightingStatus.length > 3000}
             />
             <VoiceRecorder 
               label="소화활동설비 상태 음성 입력"
               onTranscriptionComplete={(text) => {
+                const truncatedText = text.slice(0, 3000);
                 setFormData(prev => ({
                   ...prev,
-                  fireFightingStatus: text
+                  fireFightingStatus: truncatedText
                 }));
               }}
             />
@@ -448,19 +606,27 @@ const FireSafetyInspectionForm = () => {
               rows={4}
               margin="normal"
               value={formData.etcComment}
-              onChange={(e) => setFormData({...formData, etcComment: e.target.value})}
+              onChange={(e) => {
+                if (e.target.value.length <= 3000) {
+                  setFormData({...formData, etcComment: e.target.value});
+                }
+              }}
+              helperText={`${formData.etcComment.length} / 3000`}
+              error={formData.etcComment.length > 3000}
             />
             <VoiceRecorder 
               label="기타 의견 음성 입력"
               onTranscriptionComplete={(text) => {
+                const truncatedText = text.slice(0, 3000);
                 setFormData(prev => ({
                   ...prev,
-                  etcComment: text
+                  etcComment: truncatedText
                 }));
               }}
             />
           </Box>
         )}
+
 
         {/* 이미지 첨부 단계로 수정 */}
         {activeStep === 2 && (
@@ -560,6 +726,14 @@ const FireSafetyInspectionForm = () => {
         open={signatureDialogOpen}
         onClose={() => setSignatureDialogOpen(false)}
         onConfirm={handleSignatureComplete}
+      />
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({...snackbar, open: false})}
+        message={snackbar.message}
+        severity={snackbar.severity}
       />
     </Container>
   );

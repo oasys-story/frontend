@@ -57,6 +57,10 @@ const NoticeList = () => {
     message: '',
     severity: 'success'
   });
+  const [formErrors, setFormErrors] = useState({
+    title: false,
+    content: false
+  });
 
   // 초기 상태 상수로 정의
   const initialNoticeState = {
@@ -102,6 +106,16 @@ const NoticeList = () => {
   };
 
   const handleSubmit = async () => {
+    // 유효성 검사 추가
+    if (!newNotice.title.trim() || !newNotice.content.trim()) {
+      setFormErrors({
+        title: !newNotice.title.trim(),
+        content: !newNotice.content.trim()
+      });
+      alert('제목과 내용을 모두 입력해주세요.');
+      return;
+    }
+
     try {
       const formData = new FormData();
       formData.append('title', newNotice.title);
@@ -198,8 +212,12 @@ const NoticeList = () => {
       setSnackbar({
         open: true,
         message: '로그인 후 이용해 주세요.',
-        severity: 'warning'  // 경고 메시지는 노란색으로 표시
+        severity: 'warning'
       });
+      
+      // 커스텀 이벤트를 발생시켜 로그인 다이얼로그를 표시
+      const event = new CustomEvent('openLoginDialog');
+      window.dispatchEvent(event);
       return;
     }
     setDialogOpen(true);
@@ -378,7 +396,13 @@ const NoticeList = () => {
                 fullWidth
                 label="제목"
                 value={newNotice.title}
-                onChange={(e) => setNewNotice({...newNotice, title: e.target.value})}
+                onChange={(e) => {
+                  setNewNotice({...newNotice, title: e.target.value});
+                  setFormErrors(prev => ({...prev, title: false}));
+                }}
+                error={formErrors.title}
+                helperText={formErrors.title ? "제목을 입력해주세요" : ""}
+                required
               />
             </Grid>
             <Grid item xs={12}>
@@ -388,7 +412,13 @@ const NoticeList = () => {
                 multiline
                 rows={4}
                 value={newNotice.content}
-                onChange={(e) => setNewNotice({...newNotice, content: e.target.value})}
+                onChange={(e) => {
+                  setNewNotice({...newNotice, content: e.target.value});
+                  setFormErrors(prev => ({...prev, content: false}));
+                }}
+                error={formErrors.content}
+                helperText={formErrors.content ? "내용을 입력해주세요" : ""}
+                required
               />
             </Grid>
             <Grid item xs={12}>

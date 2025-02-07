@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 16,
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 10,
     borderBottom: 1,
     paddingBottom: 10,
     fontFamily: 'Pretendard',
@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
   },
   topSection: {
     flexDirection: 'row',
-    marginBottom: 20,
+    marginBottom: 10,
     borderBottom: 1,
     borderColor: '#000000',
     paddingBottom: 10,
@@ -457,6 +457,40 @@ const InspectionPDF = ({ data, checklistLabels, getStatusText }) => (
       <View style={styles.section}>
         <Text style={styles.title}>2. 점검내역</Text>
         <View style={styles.checklistTable}>
+          {/* 고압설비 행 */}
+          <View style={styles.checklistRow}>
+            <View style={styles.firstColumn}>
+              <Text>고압설비</Text>
+            </View>
+            {[
+              { id: 'aerialLine', label: '가공\n전선로' },
+              { id: 'undergroundWireLine', label: '지중\n전선로' },
+              { id: 'powerSwitch', label: '수배전용\n개폐기' },
+              { id: 'busbar', label: '배선\n(모선)' },
+              { id: 'lightningArrester', label: '피뢰기' },
+              { id: 'transformer', label: '변성기' },
+              { id: 'powerFuse', label: '전력\n퓨즈' },
+              { id: 'powerTransformer', label: '변압기' },
+              { id: 'incomingPanel', label: '수배\n전반' },
+              { id: 'relay', label: '계전\n기류' },
+              { id: 'circuitBreaker', label: '차단\n기류' },
+              { id: 'powerCapacitor', label: '전력용\n콘덴서' },
+              { id: 'protectionEquipment', label: '보호\n설비' },
+              { id: 'loadEquipment', label: '부하\n설비' },
+              { id: 'groundingSystem', label: '접지\n설비' }
+            ].map((item) => (
+              <View key={item.id} style={styles.itemColumn}>
+                <View style={styles.itemHeader}>
+                  <Text>{item.label}</Text>
+                </View>
+                <View style={styles.itemValue}>
+                  <Text>{data[item.id] || '/'}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+
+          {/* 저압설비 행 */}
           <View style={styles.checklistRow}>
             <View style={styles.firstColumn}>
               <Text>저압설비</Text>

@@ -26,9 +26,45 @@ const FireSafetyInspectionList = () => {
   const [page, setPage] = useState(1);
   const itemsPerPage = 10;
   const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    fetchInspections();
+    const fetchUserAndInspections = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const userResponse = await fetch('http://localhost:8080/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          setCurrentUser(userData);
+
+          const inspectionsResponse = await fetch('http://localhost:8080/api/fire-inspections', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (inspectionsResponse.ok) {
+            const inspectionsData = await inspectionsResponse.json();
+            
+            const filteredInspections = userData.role === 'USER'
+              ? inspectionsData.filter(inspection => inspection.companyId === userData.companyId)
+              : inspectionsData;
+
+            setInspections(filteredInspections);
+            setFilteredInspections(filteredInspections);
+          }
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    };
+
+    fetchUserAndInspections();
   }, []);
 
   useEffect(() => {
@@ -41,24 +77,6 @@ const FireSafetyInspectionList = () => {
     setFilteredInspections(filtered);
     setPage(1);
   }, [searchTerm, inspections]);
-
-  const fetchInspections = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/fire-inspections', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setInspections(data);
-        setFilteredInspections(data);
-      }
-    } catch (error) {
-      console.error('Error fetching inspections:', error);
-    }
-  };
 
   const getCurrentPageData = () => {
     const startIndex = (page - 1) * itemsPerPage;

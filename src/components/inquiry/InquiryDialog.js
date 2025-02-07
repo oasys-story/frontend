@@ -64,6 +64,10 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
     message: '',
     severity: 'success'
   });
+  const [formErrors, setFormErrors] = useState({
+    title: false,
+    content: false
+  });
 
   // 초기 상태 정의
   const initialState = {
@@ -237,6 +241,16 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
 
   // 등록 모드 핸들러
   const handleCreate = async () => {
+    // 유효성 검사 추가
+    if (!newInquiry.inquiryTitle.trim() || !newInquiry.inquiryContent.trim()) {
+      setFormErrors({
+        title: !newInquiry.inquiryTitle.trim(),
+        content: !newInquiry.inquiryContent.trim()
+      });
+      alert('제목과 문의내용을 모두 입력해주세요.');
+      return;
+    }
+
     try {
       const formData = new FormData();
       formData.append('inquiryTitle', newInquiry.inquiryTitle);
@@ -313,15 +327,15 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
           pb: 1
         }}>
           {!inquiry ? (
-            <Typography variant="h6">문의사항 등록</Typography>
+            "문의사항 등록"
           ) : !isEditing ? (
-            <Typography variant="h6">{inquiry.inquiryTitle}</Typography>
+            inquiry.inquiryTitle
           ) : (
-            <Typography variant="h6">문의사항 수정</Typography>
+            "문의사항 수정"
           )}
           
-          {/* 작성자나 관리자만 수정/삭제 버튼 표시 */}
-          {(isAuthor || isAdmin) && !isEditing && (
+          {/* 작성자나 관리자만 수정/삭제 버튼 표시 && 등록 모드가 아닐 때만 표시 */}
+          {inquiry && (isAuthor || isAdmin) && !isEditing && (
             <Box>
               <IconButton onClick={handleEditClick}>
                 <EditIcon />
@@ -342,10 +356,16 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
                   fullWidth
                   label="제목"
                   value={newInquiry.inquiryTitle}
-                  onChange={(e) => setNewInquiry({
-                    ...newInquiry,
-                    inquiryTitle: e.target.value
-                  })}
+                  onChange={(e) => {
+                    setNewInquiry({
+                      ...newInquiry,
+                      inquiryTitle: e.target.value
+                    });
+                    setFormErrors(prev => ({...prev, title: false}));
+                  }}
+                  error={formErrors.title}
+                  helperText={formErrors.title ? "제목을 입력해주세요" : ""}
+                  required
                 />
               </Grid>
               <Grid item xs={12}>
@@ -355,10 +375,16 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
                   rows={4}
                   label="문의내용"
                   value={newInquiry.inquiryContent}
-                  onChange={(e) => setNewInquiry({
-                    ...newInquiry,
-                    inquiryContent: e.target.value
-                  })}
+                  onChange={(e) => {
+                    setNewInquiry({
+                      ...newInquiry,
+                      inquiryContent: e.target.value
+                    });
+                    setFormErrors(prev => ({...prev, content: false}));
+                  }}
+                  error={formErrors.content}
+                  helperText={formErrors.content ? "문의내용을 입력해주세요" : ""}
+                  required
                 />
               </Grid>
               <Grid item xs={12}>

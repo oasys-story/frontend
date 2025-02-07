@@ -10,11 +10,15 @@ import {
   CircularProgress,
   Dialog,
   DialogContent,
+  DialogTitle,
+  DialogActions,
+  TextField,
 } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import FireSafetyInspectionPDF from './FireSafetyInspectionPDF';
 import SignatureDialog from '../inspection/SignatureDialog';
+import ShareIcon from '@mui/icons-material/Share';
 
 const FireSafetyInspectionResult = () => {
   const { id } = useParams();
@@ -24,6 +28,9 @@ const FireSafetyInspectionResult = () => {
   const [hasPermission, setHasPermission] = useState(false);
   const [signatureDialogOpen, setSignatureDialogOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [smsDialogOpen, setSmsDialogOpen] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     fetchInspectionData();
@@ -38,7 +45,7 @@ const FireSafetyInspectionResult = () => {
       });
       if (response.ok) {
         const userData = await response.json();
-        setHasPermission(userData.role === 'ADMIN' || userData.role === 'MANAGER');
+        setHasPermission(userData.role === 'USER');
       }
     } catch (error) {
       console.error('권한 체크 실패:', error);
@@ -114,6 +121,42 @@ const FireSafetyInspectionResult = () => {
     } catch (error) {
       console.error('서명 저장 실패:', error);
       alert('서명 저장 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleSendSMS = async () => {
+    if (!phoneNumber) {
+      alert('전화번호를 입력해주세요.');
+      return;
+    }
+
+    try {
+      setSending(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:8080/api/kakao-alert/fire-safety-inspection/${id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          phoneNumber: phoneNumber.replace(/-/g, '')  // 하이픈 제거
+        })
+      });
+
+      if (response.ok) {
+        alert('문자가 전송되었습니다.');
+        setSmsDialogOpen(false);
+        setPhoneNumber('');
+      } else {
+        const error = await response.text();
+        throw new Error(error);
+      }
+    } catch (error) {
+      console.error('SMS 전송 실패:', error);
+      alert('문자 전송에 실패했습니다.');
+    } finally {
+      setSending(false);
     }
   };
 
@@ -242,7 +285,7 @@ const FireSafetyInspectionResult = () => {
               )}
             </Grid>
             <Grid item xs={6}>
-              <Typography variant="subtitle2" gutterBottom>관리자 서명</Typography>
+              <Typography variant="subtitle2" gutterBottom>업체 서명</Typography>
               {inspection.managerSignature ? (
                 <Box
                   component="img"
@@ -250,7 +293,7 @@ const FireSafetyInspectionResult = () => {
                     ? inspection.managerSignature
                     : `http://localhost:8080/uploads/signatures/${inspection.managerSignature}`
                   }
-                  alt="관리자 서명"
+                  alt="업체 서명"
                   sx={{
                     width: '100%',
                     height: '100px',
@@ -263,9 +306,9 @@ const FireSafetyInspectionResult = () => {
               ) : (
                 <Box
                   onClick={() => 
-                    hasPermission 
+                    localStorage.getItem('role') === 'USER'
                       ? setSignatureDialogOpen(true) 
-                      : alert('관리자만 서명할 수 있습니다.')
+                      : alert('점검대상업체만 서명할 수 있습니다.')
                   }
                   sx={{ 
                     width: '100%', 
@@ -276,15 +319,15 @@ const FireSafetyInspectionResult = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    cursor: hasPermission ? 'pointer' : 'not-allowed',
-                    opacity: hasPermission ? 1 : 0.6,
+                    cursor: localStorage.getItem('role') === 'USER' ? 'pointer' : 'not-allowed',
+                    opacity: localStorage.getItem('role') === 'USER' ? 1 : 0.6,
                     '&:hover': {
-                      bgcolor: hasPermission ? 'rgba(28, 36, 58, 0.04)' : undefined
+                      bgcolor: localStorage.getItem('role') === 'USER' ? 'rgba(28, 36, 58, 0.04)' : undefined
                     }
                   }}
                 >
                   <Typography color="primary">
-                    {hasPermission ? '서명하기' : '관리자 전용'}
+                    {localStorage.getItem('role') === 'USER' ? '서명하기' : '점검대상업체 전용'}
                   </Typography>
                 </Box>
               )}
@@ -379,6 +422,14 @@ const FireSafetyInspectionResult = () => {
       }}>
         <Button
           variant="outlined"
+          startIcon={<ShareIcon />}
+          onClick={() => setSmsDialogOpen(true)}
+          sx={{ minWidth: '100px' }}
+        >
+          공유하기
+        </Button>
+        <Button
+          variant="outlined"
           onClick={() => navigate('/fire-safety-inspections')}
           sx={{ minWidth: '100px' }}
         >
@@ -454,6 +505,43 @@ const FireSafetyInspectionResult = () => {
         onClose={() => setSignatureDialogOpen(false)}
         onConfirm={handleSignatureComplete}
       />
+
+      <Dialog open={smsDialogOpen} onClose={() => !sending && setSmsDialogOpen(false)}>
+        <DialogTitle>점검 결과 공유하기</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="전화번호"
+            type="tel"
+            fullWidth
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            disabled={sending}
+            placeholder="010-0000-0000"
+            helperText="'-' 없이 입력해도 됩니다."
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setSmsDialogOpen(false)} 
+            disabled={sending}
+          >
+            취소
+          </Button>
+          <Button 
+            onClick={handleSendSMS} 
+            variant="contained"
+            disabled={sending}
+            sx={{ 
+              bgcolor: '#1C243A',
+              '&:hover': { bgcolor: '#3d63b8' }
+            }}
+          >
+            {sending ? '전송중...' : '전송'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

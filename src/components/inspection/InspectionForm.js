@@ -24,7 +24,11 @@ import {
   FormControl,
   InputLabel,
   ImageList,
-  ImageListItem
+  ImageListItem,
+  FormHelperText,
+  Alert,
+  Snackbar,
+  Grid
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -37,7 +41,7 @@ import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VoiceRecorder from './VoiceRecorder';
 
-const steps = ['기본 정보', '기본사항', '점검내역', '측정개소', '특이사항'];
+const steps = ['기본 정보', '기본사항', '고압설비', '저압설비', '측정개소', '특이사항'];
 
 // 점검항목 상수 정의
 const INSPECTION_ITEMS = [
@@ -58,13 +62,32 @@ const INSPECTION_ITEMS = [
   { id: 'otherEquipment', label: '기타설비' }
 ];
 
+// 고압설비 점검항목 상수 추가
+const HIGH_VOLTAGE_ITEMS = [
+  { id: 'aerialLine', label: '가공전선로' },
+  { id: 'undergroundWireLine', label: '지중전선로' },
+  { id: 'powerSwitch', label: '수배전용 개폐기' },
+  { id: 'busbar', label: '배선(모선)' },
+  { id: 'lightningArrester', label: '피뢰기' },
+  { id: 'transformer', label: '변성기' },
+  { id: 'powerFuse', label: '전력 퓨즈' },
+  { id: 'powerTransformer', label: '변압기' },
+  { id: 'incomingPanel', label: '수배전반' },
+  { id: 'relay', label: '계전기류' },
+  { id: 'circuitBreaker', label: '차단기류' },
+  { id: 'powerCapacitor', label: '전력용 콘덴서' },
+  { id: 'protectionEquipment', label: '보호설비' },
+  { id: 'loadEquipment', label: '부하 설비' },
+  { id: 'groundingSystem', label: '접지 설비' }
+];
+
 /* 점검 폼 컴포넌트 */
 const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = null }) => {
   const navigate = useNavigate();
   const [activeStep, setActiveStep] = useState(0);
   const [formData, setFormData] = useState(() => ({
     companyId: '',
-    inspectionDate: null,
+    inspectionDate: new Date(),
     managerName: '',
     
     // 기본사항 필드
@@ -79,6 +102,9 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
     
     // 점검내역 필드
     ...Object.fromEntries(INSPECTION_ITEMS.map(item => [item.id, 'O'])),
+    
+    // 고압설비 점검내역 필드 추가
+    ...Object.fromEntries(HIGH_VOLTAGE_ITEMS.map(item => [item.id, 'O'])),
     
     // 측정개소
     measurements: [
@@ -100,6 +126,16 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
   const [companies, setCompanies] = useState([]);
   const [images, setImages] = useState([]);
   const fileInputRef = useRef(null);
+  const [formErrors, setFormErrors] = useState({
+    inspectionDate: false,
+    companyId: false,
+    managerName: false
+  });
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'error'
+  });
 
   // 새로 작성할 때만 현재 사용자 정보 가져오기
   useEffect(() => {
@@ -160,6 +196,22 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
         internalWiring: initialData.internalWiring || 'O',
         generator: initialData.generator || 'O',
         otherEquipment: initialData.otherEquipment || 'O',
+        // 고압설비 점검내역 필드들 추가
+        aerialLine: initialData.aerialLine || 'O',
+        undergroundWireLine: initialData.undergroundWireLine || 'O',
+        powerSwitch: initialData.powerSwitch || 'O',
+        busbar: initialData.busbar || 'O',
+        lightningArrester: initialData.lightningArrester || 'O',
+        transformer: initialData.transformer || 'O',
+        powerFuse: initialData.powerFuse || 'O',
+        powerTransformer: initialData.powerTransformer || 'O',
+        incomingPanel: initialData.incomingPanel || 'O',
+        relay: initialData.relay || 'O',
+        circuitBreaker: initialData.circuitBreaker || 'O',
+        powerCapacitor: initialData.powerCapacitor || 'O',
+        protectionEquipment: initialData.protectionEquipment || 'O',
+        loadEquipment: initialData.loadEquipment || 'O',
+        groundingSystem: initialData.groundingSystem || 'O',
         // 측정개소 데이터
         measurements: initialData.measurements.map(m => ({
           measurementNumber: m.measurementNumber,
@@ -212,7 +264,28 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
   }, []);  // 컴포넌트 마운트 시 한 번만 실행
 
   const handleNext = () => {
-    setActiveStep((prev) => prev + 1); // 다음 스탭으로 이동
+    // 기본 정보 단계에서만 유효성 검사 실행
+    if (activeStep === 0) {
+      // 유효성 검사
+      const errors = {
+        inspectionDate: !formData.inspectionDate,
+        companyId: !formData.companyId,
+        managerName: !formData.managerName?.trim()
+      };
+
+      // 에러가 하나라도 있는지 확인
+      if (Object.values(errors).some(error => error)) {
+        setFormErrors(errors);
+        setSnackbar({
+          open: true,
+          message: '필수 입력 항목을 모두 작성해주세요.',
+          severity: 'error'
+        });
+        return;
+      }
+    }
+
+    setActiveStep((prevStep) => prevStep + 1);
   };
 
   const handleBack = () => {
@@ -223,7 +296,13 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
     setActiveStep((prev) => prev - 1); // 이전 스탭으로 이동
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (!validateForm()) {
+      setActiveStep(0); // 첫 번째 스텝으로 이동
+      alert('기본정보를 반드시 입력해주세요.');
+      return;
+    }
+
     setConfirmDialogOpen(true);
   };
 
@@ -370,7 +449,39 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
 
   // 스텝 클릭 핸들러 수정
   const handleStepClick = (index) => {
-    setActiveStep(index);  // 제한 없이 모든 단계로 이동 가능
+    // 기본 정보가 모두 입력되었는지 확인
+    if (index > 0) {
+      const errors = {
+        inspectionDate: !formData.inspectionDate,
+        companyId: !formData.companyId,
+        managerName: !formData.managerName?.trim()
+      };
+
+      if (Object.values(errors).some(error => error)) {
+        setFormErrors(errors);
+        setSnackbar({
+          open: true,
+          message: '점검일자, 업체, 점검자 정보를 모두 입력해주세요.',
+          severity: 'error'
+        });
+        setActiveStep(0);
+        return;
+      }
+    }
+    
+    setActiveStep(index);
+  };
+
+  // 유효성 검사 함수 추가
+  const validateForm = () => {
+    const errors = {
+      inspectionDate: !formData.inspectionDate,
+      companyId: !formData.companyId,
+      inspectorName: !formData.managerName
+    };
+    
+    setFormErrors(errors);
+    return !Object.values(errors).some(error => error);
   };
 
   return ( // 스탭 바 스타일 적용 (vertical=수직 / horizontal =수평)
@@ -430,30 +541,60 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
                 <DatePicker
                   label="점검일자"
                   value={formData.inspectionDate}
-                  onChange={(date) => setFormData({...formData, inspectionDate: date})}
-                  renderInput={(params) => <TextField {...params} fullWidth margin="normal" />}
+                  onChange={(date) => {
+                    setFormData({...formData, inspectionDate: date});
+                    setFormErrors({...formErrors, inspectionDate: false});
+                  }}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      margin: "normal",
+                      error: formErrors.inspectionDate,
+                      helperText: formErrors.inspectionDate ? "점검일자를 선택해주세요" : "",
+                      required: true
+                    }
+                  }}
                 />
               </LocalizationProvider>
-              <FormControl fullWidth sx={{ mb: 2 , mt: 4 }}>
+
+              <FormControl 
+                fullWidth 
+                sx={{ mb: 2, mt: 4 }}
+                error={formErrors.companyId}
+                required
+              >
                 <InputLabel>업체 선택</InputLabel>
                 <Select
-                    value={formData.companyId}
-                    onChange={handleCompanySelect}
-                    label="업체 선택"
+                  value={formData.companyId}
+                  onChange={(e) => {
+                    handleCompanySelect(e);
+                    setFormErrors({...formErrors, companyId: false});
+                  }}
+                  label="업체 선택"
                 >
-                    {companies.map((company) => (
-                        <MenuItem key={company.companyId} value={company.companyId}>
-                            {company.companyName}
-                        </MenuItem>
-                    ))}
+                  {companies.map((company) => (
+                    <MenuItem key={company.companyId} value={company.companyId}>
+                      {company.companyName}
+                    </MenuItem>
+                  ))}
                 </Select>
+                {formErrors.companyId && (
+                  <FormHelperText>업체를 선택해주세요</FormHelperText>
+                )}
               </FormControl>
+
               <TextField
                 fullWidth
                 label="점검자"
-                margin="normal"
                 value={formData.managerName}
-                onChange={(e) => setFormData({...formData, managerName: e.target.value})}
+                onChange={(e) => {
+                  setFormData({...formData, managerName: e.target.value});
+                  setFormErrors({...formErrors, inspectorName: false});
+                }}
+                error={formErrors.inspectorName}
+                helperText={formErrors.inspectorName ? "점검자를 입력해주세요" : ""}
+                required
+                sx={{ mb: 2 }}
               />
             </Box>
           )}
@@ -464,6 +605,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
               <Typography variant="h6" gutterBottom>
                 기본사항
               </Typography>
+              
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                 <TextField
                   sx={{ flex: 1 }}
@@ -471,10 +613,11 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
                   type="number"
                   margin="normal"
                   value={formData.faucetVoltage}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    faucetVoltage: e.target.value
-                  })}
+                  onChange={(e) => {
+                    if (e.target.value.length <= 5) {
+                      setFormData({ ...formData, faucetVoltage: e.target.value });
+                    }
+                  }}
                   InputProps={{
                     endAdornment: (
                       <>
@@ -482,8 +625,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
                         <VoiceRecorder 
                           label="수전전압"
                           onTranscriptionComplete={(text) => {
-                            // 숫자만 추출
-                            const number = text.replace(/[^0-9]/g, '');
+                            const number = text.replace(/[^0-9]/g, '').slice(0, 5); // 5자리 제한
                             setFormData(prev => ({
                               ...prev,
                               faucetVoltage: number
@@ -500,10 +642,11 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
                   type="number"
                   margin="normal"
                   value={formData.faucetCapacity}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    faucetCapacity: e.target.value
-                  })}
+                  onChange={(e) => {
+                    if (e.target.value.length <= 5) {
+                      setFormData({ ...formData, faucetCapacity: e.target.value });
+                    }
+                  }}
                   InputProps={{
                     endAdornment: (
                       <>
@@ -511,7 +654,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
                         <VoiceRecorder 
                           label="수전용량"
                           onTranscriptionComplete={(text) => {
-                            const number = text.replace(/[^0-9]/g, '');
+                            const number = text.replace(/[^0-9]/g, '').slice(0, 5); // 5자리 제한
                             setFormData(prev => ({
                               ...prev,
                               faucetCapacity: number
@@ -531,10 +674,11 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
                   type="number"
                   margin="normal"
                   value={formData.generationVoltage}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    generationVoltage: e.target.value
-                  })}
+                  onChange={(e) => {
+                    if (e.target.value.length <= 5) {
+                      setFormData({ ...formData, generationVoltage: e.target.value });
+                    }
+                  }}
                   InputProps={{
                     endAdornment: (
                       <>
@@ -542,7 +686,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
                         <VoiceRecorder 
                           label="발전전압"
                           onTranscriptionComplete={(text) => {
-                            const number = text.replace(/[^0-9]/g, '');
+                            const number = text.replace(/[^0-9]/g, '').slice(0, 5);
                             setFormData(prev => ({
                               ...prev,
                               generationVoltage: number
@@ -559,10 +703,11 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
                   type="number"
                   margin="normal"
                   value={formData.generationCapacity}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    generationCapacity: e.target.value
-                  })}
+                  onChange={(e) => {
+                    if (e.target.value.length <= 5) {
+                      setFormData({ ...formData, generationCapacity: e.target.value });
+                    }
+                  }}
                   InputProps={{
                     endAdornment: (
                       <>
@@ -570,7 +715,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
                         <VoiceRecorder 
                           label="발전용량"
                           onTranscriptionComplete={(text) => {
-                            const number = text.replace(/[^0-9]/g, '');
+                            const number = text.replace(/[^0-9]/g, '').slice(0, 5);
                             setFormData(prev => ({
                               ...prev,
                               generationCapacity: number
@@ -589,10 +734,11 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
                 type="number"
                 margin="normal"
                 value={formData.solarCapacity}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  solarCapacity: e.target.value
-                })}
+                onChange={(e) => {
+                  if (e.target.value.length <= 5) {
+                    setFormData({ ...formData, solarCapacity: e.target.value });
+                  }
+                }}
                 InputProps={{
                   endAdornment: (
                     <>
@@ -600,7 +746,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
                       <VoiceRecorder 
                         label="태양광"
                         onTranscriptionComplete={(text) => {
-                          const number = text.replace(/[^0-9]/g, '');
+                          const number = text.replace(/[^0-9]/g, '').slice(0, 5);
                           setFormData(prev => ({
                             ...prev,
                             solarCapacity: number
@@ -611,16 +757,18 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
                   ),
                 }}
               />
+
               <TextField
                 fullWidth
                 label="계약용량"
                 type="number"
                 margin="normal"
                 value={formData.contractCapacity}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  contractCapacity: e.target.value
-                })}
+                onChange={(e) => {
+                  if (e.target.value.length <= 5) {
+                    setFormData({ ...formData, contractCapacity: e.target.value });
+                  }
+                }}
                 InputProps={{
                   endAdornment: (
                     <>
@@ -628,7 +776,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
                       <VoiceRecorder 
                         label="계약용량"
                         onTranscriptionComplete={(text) => {
-                          const number = text.replace(/[^0-9]/g, '');
+                          const number = text.replace(/[^0-9]/g, '').slice(0, 5);
                           setFormData(prev => ({
                             ...prev,
                             contractCapacity: number
@@ -639,6 +787,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
                   ),
                 }}
               />
+              
               <TextField
                 fullWidth
                 label="점검종별"
@@ -663,41 +812,100 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
                 }}
               />
               <TextField
-                fullWidth
-                label="점검횟수"
-                type="number"
-                margin="normal"
-                value={formData.inspectionCount}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  inspectionCount: e.target.value
-                })}
-                InputProps={{
-                  endAdornment: (
-                    <>
-                      <InputAdornment position="end">회</InputAdornment>
-                      <VoiceRecorder 
-                        label="점검횟수"
-                        onTranscriptionComplete={(text) => {
-                          const number = text.replace(/[^0-9]/g, '');
-                          setFormData(prev => ({
-                            ...prev,
-                            inspectionCount: number
-                          }));
-                        }}
-                      />
-                    </>
-                  ),
-                }}
-              />
+                  fullWidth
+                  label="점검횟수"
+                  type="number"
+                  margin="normal"
+                  value={formData.inspectionCount}
+                  onChange={(e) => {
+                    if (e.target.value.length <= 5) {
+                      setFormData({ ...formData, inspectionCount: e.target.value });
+                    }
+                  }}
+                  InputProps={{
+                    endAdornment: (
+                      <>
+                        <InputAdornment position="end">회</InputAdornment>
+                        <VoiceRecorder 
+                          label="점검횟수"
+                          onTranscriptionComplete={(text) => {
+                            const number = text.replace(/[^0-9]/g, '').slice(0, 5);
+                            setFormData(prev => ({
+                              ...prev,
+                              inspectionCount: number
+                            }));
+                          }}
+                        />
+                      </>
+                    ),
+                  }}
+                />
+              </Box>
+          )}
+
+          {/* 고압설비 */}
+          {activeStep === 2 && (
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                고압설비
+              </Typography>
+              {HIGH_VOLTAGE_ITEMS.map(item => (
+                <Box
+                  key={item.id}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '8px 0',
+                    borderBottom: '1px solid #eee',
+                    minWidth: '100%',
+                    '& .MuiFormControlLabel-root': {
+                      margin: 0,
+                      minWidth: 'auto',
+                      flex: 1
+                    },
+                    '& .MuiFormControlLabel-label': {
+                      fontSize: '0.8rem'
+                    },
+                    '& .MuiRadio-root': {
+                      padding: '4px'
+                    }
+                  }}
+                >
+                  <Typography sx={{ 
+                    flexBasis: '35%',
+                    fontSize: '0.9rem',
+                    paddingRight: '8px'
+                  }}>
+                    {item.label}
+                  </Typography>
+                  <RadioGroup
+                    row
+                    sx={{ 
+                      flexBasis: '65%',
+                      justifyContent: 'flex-end',
+                      gap: '4px'
+                    }}
+                    value={formData[item.id] || ''}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      [item.id]: e.target.value
+                    })}
+                  >
+                    <FormControlLabel value="O" control={<Radio size="small" />} label="적합" />
+                    <FormControlLabel value="X" control={<Radio size="small" />} label="부적합" />
+                    <FormControlLabel value="/" control={<Radio size="small" />} label="해당없음" />
+                  </RadioGroup>
+                </Box>
+              ))}
             </Box>
           )}
 
           {/* 점검내역 */}
-          {activeStep === 2 && (
+          {activeStep === 3 && (
             <Box>
               <Typography variant="h6" gutterBottom>
-                점검내역
+                저압설비
               </Typography>
               {INSPECTION_ITEMS.map(item => (
                 <Box
@@ -752,7 +960,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
           )}
 
           {/* 측정개소 */}
-          {activeStep === 3 && (
+          {activeStep === 4 && (
             <Box>
               <Typography variant="h6" gutterBottom>
                 측정개소
@@ -797,52 +1005,64 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
                           {phase}
                         </Typography>
                       </Box>
+
+                      {/* 전압 입력 */}
                       <TextField
                         label="전압"
                         type="number"
                         size="small"
                         value={measurement[`voltage${phase}`]}
                         onChange={(e) => {
-                          const newMeasurements = [...formData.measurements];
-                          newMeasurements[index] = {
-                            ...newMeasurements[index],
-                            [`voltage${phase}`]: e.target.value
-                          };
-                          setFormData({...formData, measurements: newMeasurements});
+                          if (e.target.value.length <= 5) {
+                            const newMeasurements = [...formData.measurements];
+                            newMeasurements[index] = {
+                              ...newMeasurements[index],
+                              [`voltage${phase}`]: e.target.value
+                            };
+                            setFormData({...formData, measurements: newMeasurements});
+                          }
                         }}
                         InputProps={{
                           endAdornment: <InputAdornment position="end">V</InputAdornment>,
                         }}
                       />
+
+                      {/* 전류 입력 */}
                       <TextField
                         label="전류"
                         type="number"
                         size="small"
                         value={measurement[`current${phase}`]}
                         onChange={(e) => {
-                          const newMeasurements = [...formData.measurements];
-                          newMeasurements[index] = {
-                            ...newMeasurements[index],
-                            [`current${phase}`]: e.target.value
-                          };
-                          setFormData({...formData, measurements: newMeasurements});
+                          if (e.target.value.length <= 5) {
+                            const newMeasurements = [...formData.measurements];
+                            newMeasurements[index] = {
+                              ...newMeasurements[index],
+                              [`current${phase}`]: e.target.value
+                            };
+                            setFormData({...formData, measurements: newMeasurements});
+                          }
                         }}
                         InputProps={{
                           endAdornment: <InputAdornment position="end">A</InputAdornment>,
                         }}
                       />
+
+                      {/* 온도 입력 */}
                       <TextField
                         label="온도"
                         type="number"
                         size="small"
                         value={measurement[`temperature${phase}`]}
                         onChange={(e) => {
-                          const newMeasurements = [...formData.measurements];
-                          newMeasurements[index] = {
-                            ...newMeasurements[index],
-                            [`temperature${phase}`]: e.target.value
-                          };
-                          setFormData({...formData, measurements: newMeasurements});
+                          if (e.target.value.length <= 5) {
+                            const newMeasurements = [...formData.measurements];
+                            newMeasurements[index] = {
+                              ...newMeasurements[index],
+                              [`temperature${phase}`]: e.target.value
+                            };
+                            setFormData({...formData, measurements: newMeasurements});
+                          }
                         }}
                         InputProps={{
                           endAdornment: <InputAdornment position="end">℃</InputAdornment>,
@@ -867,7 +1087,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
           )}
 
           {/* 특이사항 */}
-          {activeStep === 4 && (
+          {activeStep === 5 && (
             <Box>
               <Typography variant="h6" gutterBottom>
                 특이사항
@@ -878,13 +1098,20 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
                 rows={4}
                 label="특이사항"
                 value={formData.specialNotes}
-                onChange={(e) => setFormData({...formData, specialNotes: e.target.value})}
+                onChange={(e) => {
+                  if (e.target.value.length <= 3000) {
+                    setFormData({...formData, specialNotes: e.target.value});
+                  }
+                }}
+                helperText={`${formData.specialNotes.length} / 3000`} // 현재 입력된 글자 수 표시
+                error={formData.specialNotes.length > 3000} // 초과 시 경고 스타일 적용
               />
               <VoiceRecorder 
                 onTranscriptionComplete={(text) => {
+                  const truncatedText = text.slice(0, 3000); // 3000자까지만 저장
                   setFormData(prev => ({
                     ...prev,
-                    specialNotes: text
+                    specialNotes: truncatedText
                   }));
                 }}
               />
@@ -984,6 +1211,21 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
           onClose={() => setSignatureDialogOpen(false)}
           onConfirm={handleSignatureConfirm}
         />
+
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert 
+            onClose={() => setSnackbar({ ...snackbar, open: false })} 
+            severity={snackbar.severity}
+            sx={{ width: '100%' }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Paper>
     </Container>
   );

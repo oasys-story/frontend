@@ -107,6 +107,10 @@ const InquiryList = () => {
         message: '로그인 후 이용해 주세요.',
         severity: 'warning'
       });
+      
+      // 커스텀 이벤트를 발생시켜 로그인 다이얼로그를 표시
+      const event = new CustomEvent('openLoginDialog');
+      window.dispatchEvent(event);
       return;
     }
     setDialogOpen(true);

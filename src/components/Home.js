@@ -121,7 +121,7 @@ const Home = () => {
         <Toolbar sx={{ justifyContent: 'center', minHeight: '60px' }}>
           <Box
             component="img"
-            src="/images/sobang.png"
+            src="/images/dawoo2.png"
             alt="로고"
             sx={{
               height: '50px',

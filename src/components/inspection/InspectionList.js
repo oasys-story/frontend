@@ -25,6 +25,7 @@ const InspectionList = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const itemsPerPage = 10;
   const navigate = useNavigate();
+  const [totalPages, setTotalPages] = useState(1);
 
   // 현재 로그인한 사용자 정보 조회
   useEffect(() => {
@@ -49,27 +50,6 @@ const InspectionList = () => {
     fetchCurrentUser();
   }, []);
 
-  useEffect(() => {
-    let filtered = inspections;
-
-    // USER 권한일 경우 해당 회사의 점검 목록만 필터링
-    if (currentUser?.role === 'USER' && currentUser?.companyId) {
-      filtered = inspections.filter(inspection => 
-        inspection.companyId === currentUser.companyId
-      );
-    }
-
-    // 검색어로 추가 필터링
-    if (searchTerm) {
-      filtered = filtered.filter(inspection =>
-        inspection.managerName?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    setFilteredInspections(filtered);
-    setPage(1);
-  }, [searchTerm, inspections, currentUser]);
-
   const fetchInspections = async (user) => {
     try {
       const token = localStorage.getItem('token');
@@ -78,7 +58,12 @@ const InspectionList = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:8080/api/inspections', {
+      // USER 권한일 경우 회사별 API 사용, 그 외는 전체 조회 API 사용
+      const url = user?.role === 'USER' && user?.companyId
+        ? `http://localhost:8080/api/inspections/company/${user.companyId}`
+        : 'http://localhost:8080/api/inspections';
+
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -87,15 +72,11 @@ const InspectionList = () => {
 
       if (response.ok) {
         const data = await response.json();
-        const inspectionsArray = Array.isArray(data) ? data : data.content || [];
-        
-        // USER 권한일 경우 해당 회사의 점검 목록만 필터링
-        const filteredArray = user?.role === 'USER' && user?.companyId
-          ? inspectionsArray.filter(inspection => inspection.companyId === user.companyId)
-          : inspectionsArray;
-
-        setInspections(filteredArray);
-        setFilteredInspections(filteredArray);
+        // 페이징 데이터 처리
+        const inspectionsArray = data.content || [];
+        setInspections(inspectionsArray);
+        setFilteredInspections(inspectionsArray);
+        setTotalPages(data.totalPages);
       } else {
         console.error('API 호출 실패:', response.status);
       }
@@ -238,7 +219,7 @@ const InspectionList = () => {
         {/* 페이지네이션 */}
         <Stack spacing={2} alignItems="center">
           <Pagination
-            count={Math.ceil(filteredInspections.length / itemsPerPage)}
+            count={totalPages}
             page={page}
             onChange={handlePageChange}
             color="primary"

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Drawer,
@@ -32,6 +32,10 @@ const Sidebar = () => {
     open: false,
     message: '',
     severity: 'success'
+  });
+  const [errorMessage, setErrorMessage] = useState({
+    username: '',
+    password: ''
   });
   const navigate = useNavigate();
 
@@ -107,8 +111,9 @@ const Sidebar = () => {
         }),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        const data = await response.json();
         localStorage.setItem('token', data.token);
         localStorage.setItem('userId', data.user.userId);
         localStorage.setItem('role', data.user.role);
@@ -116,19 +121,25 @@ const Sidebar = () => {
         localStorage.setItem('user', JSON.stringify(data.user));
         setUser(data.user);
         setLoginDialogOpen(false);
+        setErrorMessage({ username: '', password: '' });
 
-        // 로그인 성공 메시지
         setSnackbar({
           open: true,
           message: '로그인되었습니다.',
           severity: 'success'
         });
       } else {
-        setSnackbar({
-          open: true,
-          message: '로그인에 실패했습니다.',
-          severity: 'error'
-        });
+        if (data.message === "존재하지 않는 사용자입니다.") {
+          setErrorMessage({
+            username: data.message,
+            password: ''
+          });
+        } else if (data.message === "비밀번호가 틀렸습니다.") {
+          setErrorMessage({
+            username: '',
+            password: data.message
+          });
+        }
       }
     } catch (error) {
       console.error('로그인 실패:', error);
@@ -167,6 +178,9 @@ const Sidebar = () => {
         message: '로그아웃되었습니다.',
         severity: 'success'
       });
+
+      // 홈으로 이동 추가
+      navigate('/');
       
     } catch (error) {
       console.error('로그아웃 실패:', error);
@@ -235,6 +249,19 @@ const Sidebar = () => {
 //       console.error('API Request Failed:', error);
 //     }
 //   };
+
+  // useEffect 추가
+  useEffect(() => {
+    const handleOpenLoginDialog = () => {
+      setLoginDialogOpen(true);
+    };
+
+    window.addEventListener('openLoginDialog', handleOpenLoginDialog);
+
+    return () => {
+      window.removeEventListener('openLoginDialog', handleOpenLoginDialog);
+    };
+  }, []);
 
   return (
     <>
@@ -377,7 +404,12 @@ const Sidebar = () => {
             type="text"
             fullWidth
             value={loginData.username}
-            onChange={(e) => setLoginData({...loginData, username: e.target.value})}
+            onChange={(e) => {
+              setLoginData({...loginData, username: e.target.value});
+              setErrorMessage({...errorMessage, username: ''});
+            }}
+            error={Boolean(errorMessage.username)}
+            helperText={errorMessage.username}
           />
           <TextField
             margin="dense"
@@ -385,7 +417,12 @@ const Sidebar = () => {
             type="password"
             fullWidth
             value={loginData.password}
-            onChange={(e) => setLoginData({...loginData, password: e.target.value})}
+            onChange={(e) => {
+              setLoginData({...loginData, password: e.target.value});
+              setErrorMessage({...errorMessage, password: ''});
+            }}
+            error={Boolean(errorMessage.password)}
+            helperText={errorMessage.password}
           />
         </DialogContent>
         <DialogActions>

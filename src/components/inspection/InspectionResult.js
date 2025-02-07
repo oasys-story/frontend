@@ -15,12 +15,19 @@ import {
   Grid,
   Paper,
   ImageList,
-  ImageListItem
+  ImageListItem,
+  Tabs,
+  Tab,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails
 } from '@mui/material';
 import SignatureDialog from './SignatureDialog';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import InspectionPDF from './InspectionPdf';
+import ShareIcon from '@mui/icons-material/Share';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 const InspectionResult = () => {
   const { id } = useParams();
@@ -33,14 +40,19 @@ const InspectionResult = () => {
   const [signatureDialogOpen, setSignatureDialogOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [sending, setSending] = useState(false);
+  const [selectedTab, setSelectedTab] = useState(0);
 
   const checklistLabels = {
+
+    // 저압설비
     wiringInlet: '인입구 배선',
     distributionPanel: '배·분전반',
     moldedCaseBreaker: '배선용 차단기',
     earthLeakageBreaker: '누전 차단기',
     switchGear: '개폐기',
     wiring: '배선',
+
     motor: '전동기',
     heatingEquipment: '전열설비',
     welder: '용접기',
@@ -49,7 +61,24 @@ const InspectionResult = () => {
     grounding: '접지설비',
     internalWiring: '구내 전선로',
     generator: '발전기',
-    otherEquipment: '기타설비'
+    otherEquipment: '기타설비',
+  
+    // 고압설비비
+    aerialLine: '가공전선로',
+    undergroundWireLine: '지중전선로',
+    powerSwitch: '수배전용 개폐기',
+    busbar: '배선(모선)',
+    lightningArrester: '피뢰기',
+    transformer: '변성기',
+    powerFuse: '전력 퓨즈',
+    powerTransformer: '변압기',
+    incomingPanel: '수배전반',
+    relay: '계전기류',
+    circuitBreaker: '차단기류',
+    powerCapacitor: '전력용 콘덴서',
+    protectionEquipment: '보호설비',
+    loadEquipment: '부하 설비',
+    groundingSystem: '접지 설비'
   };
 
   useEffect(() => {
@@ -102,25 +131,39 @@ const InspectionResult = () => {
     }
   };
 
-  const handleSendSms = async () => {
-    // 하이픈과 공백을 모두 제거하고 국제 형식으로 변환
-    const internationalNumber = '+82' + phoneNumber.replace(/[-\s]/g, '').replace(/^0/, '');
+  const handleSendSMS = async () => {
+    if (!phoneNumber) {
+      alert('전화번호를 입력해주세요.');
+      return;
+    }
+
     try {
-      const response = await fetch(
-        `http://localhost:8080/api/inspections/${id}/send-sms?phoneNumber=${internationalNumber}`,
-        { method: 'POST' }
-      );
-      
-      if (response.ok) { // 전송 성공 여부 확인
-        alert('점검 결과가 전송되었습니다.');
-        setSmsDialogOpen(false); // SMS 전송 다이얼로그 닫기
+      setSending(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:8080/api/kakao-alert/inspection/${id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          phoneNumber: phoneNumber.replace(/-/g, '')  // 하이픈 제거
+        })
+      });
+
+      if (response.ok) {
+        alert('알림톡이 전송되었습니다.');
+        setSmsDialogOpen(false);
+        setPhoneNumber('');
       } else {
-        const errorText = await response.text(); 
-        throw new Error(errorText || '전송에 실패했습니다.'); 
+        const error = await response.text();
+        throw new Error(error);
       }
     } catch (error) {
-      alert(error.message || '메시지 전송 중 오류가 발생했습니다.'); 
-      console.error(error);
+      console.error('알림톡 전송 실패:', error);
+      alert('알림톡 전송에 실패했습니다.');
+    } finally {
+      setSending(false);
     }
   };
 
@@ -196,6 +239,112 @@ const InspectionResult = () => {
       {children}
     </Box>
   );
+
+  const InspectionSection = () => {
+    const lowVoltageItems = [
+      'wiringInlet', 'distributionPanel', 'moldedCaseBreaker', 'earthLeakageBreaker', 
+      'switchGear', 'wiring', 'motor', 'heatingEquipment', 'welder', 'capacitor', 
+      'lighting', 'grounding', 'internalWiring', 'generator', 'otherEquipment'
+    ];
+
+    const highVoltageItems = [
+      'aerialLine', 'undergroundWireLine', 'powerSwitch', 'busbar', 'lightningArrester',
+      'transformer', 'powerFuse', 'powerTransformer', 'incomingPanel', 'relay',
+      'circuitBreaker', 'powerCapacitor', 'protectionEquipment', 'loadEquipment', 'groundingSystem'
+    ];
+
+    const getStatusChip = (status) => {
+      const statusColors = {
+        'O': 'success',
+        'X': 'error',
+        '△': 'warning',
+        '/': 'default'
+      };
+      
+      const statusLabels = {
+        'O': '적합',
+        'X': '부적합',
+        '△': '보통',
+        '/': '해당없음'
+      };
+
+      return (
+        <Chip 
+          label={statusLabels[status]} 
+          color={statusColors[status]} 
+          size="small"
+          sx={{ minWidth: '80px' }}
+        />
+      );
+    };
+
+    return (
+      <Box sx={{ width: '100%' }}>
+        <Tabs
+          value={selectedTab}
+          onChange={(e, newValue) => setSelectedTab(newValue)}
+          sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}
+        >
+          <Tab label="저압설비" />
+          <Tab label="고압설비" />
+        </Tabs>
+
+        {selectedTab === 0 && (
+          <Accordion defaultExpanded={false}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="subtitle2">저압설비 점검내역</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {lowVoltageItems.map((item) => (
+                  <Box
+                    key={item}
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      py: 0.5,
+                      borderBottom: '1px solid #eee'
+                    }}
+                  >
+                    <Typography variant="body2">{checklistLabels[item]}</Typography>
+                    {getStatusChip(data[item])}
+                  </Box>
+                ))}
+              </Box>
+            </AccordionDetails>
+          </Accordion>
+        )}
+
+        {selectedTab === 1 && (
+          <Accordion defaultExpanded={false}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="subtitle2">고압설비 점검내역</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {highVoltageItems.map((item) => (
+                  <Box
+                    key={item}
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      py: 0.5,
+                      borderBottom: '1px solid #eee'
+                    }}
+                  >
+                    <Typography variant="body2">{checklistLabels[item]}</Typography>
+                    {getStatusChip(data[item])}
+                  </Box>
+                ))}
+              </Box>
+            </AccordionDetails>
+          </Accordion>
+        )}
+      </Box>
+    );
+  };
 
   if (loading) {
     return (
@@ -356,26 +505,7 @@ const InspectionResult = () => {
           }}>
             점검내역
           </Typography>
-          {Object.entries(checklistLabels).map(([key, label]) => (
-            <Box key={key} sx={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center',
-              py: 1.5,
-              borderBottom: '1px solid #eee'
-            }}>
-              <Typography variant="body1">{label}</Typography>
-              <Chip 
-                label={getStatusText(data[key])}
-                color={getStatusColor(data[key])}
-                size="small"
-                sx={{ 
-                  minWidth: 60,
-                  height: 24
-                }}
-              />
-            </Box>
-          ))}
+          <InspectionSection />
         </Paper>
 
         {/* 측정개소 */}
@@ -650,6 +780,14 @@ const InspectionResult = () => {
       }}>
         <Button
           variant="outlined"
+          startIcon={<ShareIcon />}
+          onClick={() => setSmsDialogOpen(true)}
+          sx={{ minWidth: '100px' }}
+        >
+          알림톡 전송
+        </Button>
+        <Button
+          variant="outlined"
           onClick={() => navigate('/inspections')}
           sx={{ minWidth: '100px' }}
         >
@@ -688,12 +826,9 @@ const InspectionResult = () => {
       </Box>
 
       {/* SMS 다이얼로그 */}
-      <Dialog open={smsDialogOpen} onClose={() => setSmsDialogOpen(false)}>
-        <DialogTitle>SMS 전송</DialogTitle>
+      <Dialog open={smsDialogOpen} onClose={() => !sending && setSmsDialogOpen(false)}>
+        <DialogTitle>점검 결과 알림톡 전송</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            점검 결과를 전송할 전화번호를 입력하세요.
-          </DialogContentText>
           <TextField
             autoFocus
             margin="dense"
@@ -702,17 +837,28 @@ const InspectionResult = () => {
             fullWidth
             value={phoneNumber}
             onChange={handlePhoneNumberChange}
+            disabled={sending}
             placeholder="010-0000-0000"
+            helperText="'-' 없이 입력해주세요."
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setSmsDialogOpen(false)}>취소</Button>
           <Button 
-            onClick={handleSendSms} 
-            variant="contained"
-            disabled={phoneNumber.length < 13}
+            onClick={() => setSmsDialogOpen(false)} 
+            disabled={sending}
           >
-            전송
+            취소
+          </Button>
+          <Button 
+            onClick={handleSendSMS} 
+            variant="contained"
+            disabled={sending}
+            sx={{ 
+              bgcolor: '#1C243A',
+              '&:hover': { bgcolor: '#3d63b8' }
+            }}
+          >
+            {sending ? '전송중...' : '알림톡 전송'}
           </Button>
         </DialogActions>
       </Dialog>
