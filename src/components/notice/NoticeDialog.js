@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
 import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
+// import DeleteIcon from '@mui/icons-material/Delete';
 import ClearIcon from '@mui/icons-material/Clear';
 
 const NoticeDialog = ({ open, onClose, notice, onDelete, onUpdate }) => {
@@ -180,9 +180,9 @@ const NoticeDialog = ({ open, onClose, notice, onDelete, onUpdate }) => {
               <IconButton size="small" onClick={handleEditClick}>
                 <EditIcon />
               </IconButton>
-              <IconButton size="small" onClick={handleDelete}>
+              {/* <IconButton size="small" onClick={handleDelete}>
                 <DeleteIcon />
-              </IconButton>
+              </IconButton> */}
             </Box>
           )}
         </DialogTitle>

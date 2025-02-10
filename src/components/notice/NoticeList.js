@@ -12,7 +12,7 @@ import {
   Button,
   InputAdornment,
   Typography,
-  Chip,
+  // Chip,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -23,12 +23,16 @@ import {
   Stack,
   Pagination,
   Snackbar,
-  Alert
+  Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
+// import DeleteIcon from '@mui/icons-material/Delete';
 import { useNavigate } from 'react-router-dom';
 import NoticeDialog from './NoticeDialog';
 import IconButton from '@mui/material/IconButton';
@@ -37,6 +41,7 @@ import ClearIcon from '@mui/icons-material/Clear';
 const NoticeList = () => {
   const [notices, setNotices] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState('latest'); // 기본값: 최신순
   const [filteredNotices, setFilteredNotices] = useState([]);
   const [page, setPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -77,12 +82,39 @@ const NoticeList = () => {
   }, []);
 
   useEffect(() => {
-    const filtered = notices.filter(notice =>
-      notice.title.toLowerCase().includes(searchTerm.toLowerCase())
+    let filtered = notices.filter(notice =>
+      notice.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(notice.writerName).includes(searchTerm) // ID 검색
     );
+  
+    // 날짜 정렬 필터 적용
+    const now = new Date();
+    switch (dateFilter) {
+      case 'oldest':
+        filtered.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        break;
+      case 'latest':
+        filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        break;
+      case 'week':
+        filtered = filtered.filter(notice => {
+          const noticeDate = new Date(notice.createdAt);
+          return now - noticeDate <= 7 * 24 * 60 * 60 * 1000;
+        });
+        break;
+      case 'month':
+        filtered = filtered.filter(notice => {
+          const noticeDate = new Date(notice.createdAt);
+          return now - noticeDate <= 30 * 24 * 60 * 60 * 1000;
+        });
+        break;
+      default:
+        break;
+    }
+  
     setFilteredNotices(filtered);
     setPage(1);
-  }, [searchTerm, notices]);
+  }, [searchTerm, dateFilter, notices]);
 
   const fetchNotices = async () => {
     try {
@@ -92,7 +124,11 @@ const NoticeList = () => {
         }
       });
       if (response.ok) {
-        const data = await response.json();
+        let data = await response.json();
+        
+        // noticeId 기준 내림차순 정렬 (최신 공지가 앞에 오도록)
+        data.sort((a, b) => b.noticeId - a.noticeId);
+  
         setNotices(data);
         setFilteredNotices(data);
       }
@@ -100,6 +136,7 @@ const NoticeList = () => {
       console.error('Failed to fetch notices:', error);
     }
   };
+  
 
   const handleCloseSnackbar = () => {
     setSnackbar({ ...snackbar, open: false });
@@ -251,22 +288,38 @@ const NoticeList = () => {
 
       <Box sx={{ mt: 6 }}>
         {/* 검색창 */}
-        <TextField
-          size="small"
-          fullWidth
-          variant="outlined"
-          placeholder="제목 검색"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          sx={{ mb: 2 }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon color="action" />
-              </InputAdornment>
-            ),
-          }}
-        />
+        <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+          {/* 제목 & ID 검색 */}
+          <TextField
+            size="small"
+            variant="outlined"
+            placeholder="제목 또는 ID 검색"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            sx={{ width: '70%' }} // 7:3 비율 유지
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon color="action" />
+                </InputAdornment>
+              ),
+            }}
+          />
+          
+          {/* 날짜 정렬 필터 */}
+          <FormControl size="small" sx={{ width: '30%' }}>
+            <InputLabel>날짜 정렬</InputLabel>
+            <Select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+            >
+              <MenuItem value="latest">최신 순</MenuItem>
+              <MenuItem value="oldest">오래된 순</MenuItem>
+              <MenuItem value="week">1주일 내 내역</MenuItem>
+              <MenuItem value="month">1달 내 내역</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
 
         {/* 공지사항 목록 테이블 */}
         <TableContainer component={Paper} sx={{ mb: 2, boxShadow: 'none' }}>

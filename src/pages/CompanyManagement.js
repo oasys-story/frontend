@@ -197,7 +197,7 @@ const CompanyManagement = () => {
               >
                 목록
               </Button>
-              {isAdmin && (
+              {/* {isAdmin && (
                 <Button 
                   variant="outlined"
                   onClick={handleDelete}
@@ -214,7 +214,7 @@ const CompanyManagement = () => {
                 >
                   삭제
                 </Button>
-              )}
+              )} */}
             </Box>
           </Stack>
         </form>

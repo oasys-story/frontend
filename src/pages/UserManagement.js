@@ -323,27 +323,44 @@ const UserManagement = () => {
               label="새 비밀번호"
               value={passwordData.newPassword}
               onChange={(e) => {
-                setPasswordData({...passwordData, newPassword: e.target.value});
-                setPasswordErrors({...passwordErrors, newPassword: ''});
+                const value = e.target.value;
+                let errorMessage = '';
+
+                if (value.length > 0 && value.length < 4) {
+                  errorMessage = '새 비밀번호는 4자 이상이어야 합니다.';
+                } else if (/\s/.test(value)) {
+                  errorMessage = '새 비밀번호에는 공백이 포함될 수 없습니다.';
+                }
+
+                setPasswordData({ ...passwordData, newPassword: value });
+                setPasswordErrors({ ...passwordErrors, newPassword: errorMessage });
               }}
               error={Boolean(passwordErrors.newPassword)}
               helperText={passwordErrors.newPassword}
               margin="normal"
             />
-            
+
             <TextField
               fullWidth
               type="password"
               label="새 비밀번호 확인"
               value={passwordData.confirmPassword}
               onChange={(e) => {
-                setPasswordData({...passwordData, confirmPassword: e.target.value});
-                setPasswordErrors({...passwordErrors, confirmPassword: ''});
+                const value = e.target.value;
+                let errorMessage = '';
+
+                if (value !== passwordData.newPassword) {
+                  errorMessage = '새 비밀번호가 일치하지 않습니다.';
+                }
+
+                setPasswordData({ ...passwordData, confirmPassword: value });
+                setPasswordErrors({ ...passwordErrors, confirmPassword: errorMessage });
               }}
               error={Boolean(passwordErrors.confirmPassword)}
               helperText={passwordErrors.confirmPassword}
               margin="normal"
             />
+
 
             {/* 버튼 그룹 */}
             <Box sx={{ 
@@ -378,7 +395,7 @@ const UserManagement = () => {
               >
                 목록
               </Button>
-              {isAdmin && (
+              {/* {isAdmin && (
                 <Button 
                   variant="outlined"
                   onClick={handleDelete}
@@ -395,7 +412,7 @@ const UserManagement = () => {
                 >
                   삭제
                 </Button>
-              )}
+              )} */}
             </Box>
           </Stack>
         </form>

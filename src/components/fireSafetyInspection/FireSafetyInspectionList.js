@@ -37,24 +37,28 @@ const FireSafetyInspectionList = () => {
             'Authorization': `Bearer ${token}`
           }
         });
-
+  
         if (userResponse.ok) {
           const userData = await userResponse.json();
           setCurrentUser(userData);
-
+  
           const inspectionsResponse = await fetch('http://localhost:8080/api/fire-inspections', {
             headers: {
               'Authorization': `Bearer ${token}`
             }
           });
-
+  
           if (inspectionsResponse.ok) {
-            const inspectionsData = await inspectionsResponse.json();
+            let inspectionsData = await inspectionsResponse.json();
             
-            const filteredInspections = userData.role === 'USER'
+            // 사용자 권한이 USER이면 본인의 회사 점검만 필터링
+            let filteredInspections = userData.role === 'USER'
               ? inspectionsData.filter(inspection => inspection.companyId === userData.companyId)
               : inspectionsData;
-
+            
+            // fireInspectionId 기준 내림차순 정렬 (최신 점검이 앞에 오도록)
+            filteredInspections.sort((a, b) => b.fireInspectionId - a.fireInspectionId);
+  
             setInspections(filteredInspections);
             setFilteredInspections(filteredInspections);
           }
@@ -63,9 +67,10 @@ const FireSafetyInspectionList = () => {
         console.error('Error:', error);
       }
     };
-
+  
     fetchUserAndInspections();
   }, []);
+  
 
   useEffect(() => {
     let filtered = inspections;
@@ -157,7 +162,10 @@ const FireSafetyInspectionList = () => {
                     '&:hover': { bgcolor: '#f5f5f5' }
                   }}
                 >
-                  <TableCell sx={{ py: 1, fontSize: '0.875rem' }}>{inspection.fireInspectionId}</TableCell>
+                  {/* 최신순을 유지하면서 연속된 번호 부여 */}
+                  <TableCell sx={{ py: 1, fontSize: '0.875rem' }}>
+                    {filteredInspections.length - ((page - 1) * itemsPerPage + index)}
+                  </TableCell>
                   <TableCell sx={{ py: 1, fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {inspection.buildingName}
                   </TableCell>
@@ -166,6 +174,8 @@ const FireSafetyInspectionList = () => {
                 </TableRow>
               ))}
             </TableBody>
+
+
           </Table>
         </TableContainer>
 

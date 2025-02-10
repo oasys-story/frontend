@@ -64,6 +64,9 @@ const FireSafetyInspectionResult = () => {
       if (response.ok) {
         const data = await response.json();
         setInspection(data);
+        if (data.phoneNumber) {
+          setPhoneNumber(data.phoneNumber);
+        }
       } else {
         console.error('데이터 로딩 실패');
       }

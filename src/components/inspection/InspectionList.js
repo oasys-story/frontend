@@ -57,23 +57,24 @@ const InspectionList = () => {
         console.error('토큰이 없습니다. 로그인이 필요합니다.');
         return;
       }
-
+  
       // USER 권한일 경우 회사별 API 사용, 그 외는 전체 조회 API 사용
       const url = user?.role === 'USER' && user?.companyId
         ? `http://localhost:8080/api/inspections/company/${user.companyId}`
         : 'http://localhost:8080/api/inspections';
-
+  
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-
+  
       if (response.ok) {
         const data = await response.json();
-        // 페이징 데이터 처리
-        const inspectionsArray = data.content || [];
+        // 점검 ID 기준 내림차순 정렬 (최신 점검이 앞에 오도록)
+        const inspectionsArray = (data.content || []).sort((a, b) => b.inspectionId - a.inspectionId);
+        
         setInspections(inspectionsArray);
         setFilteredInspections(inspectionsArray);
         setTotalPages(data.totalPages);
@@ -86,6 +87,7 @@ const InspectionList = () => {
       setFilteredInspections([]);
     }
   };
+  
 
   const getCurrentPageData = () => {
     if (!Array.isArray(filteredInspections)) {
@@ -198,8 +200,9 @@ const InspectionList = () => {
                     '&:hover': { bgcolor: '#f5f5f5' }
                   }}
                 >
+                  {/* 최신순을 유지하면서 연속된 번호 부여 */}
                   <TableCell sx={{ py: 1, fontSize: '0.875rem' }}>
-                    {inspection.inspectionId}
+                    {filteredInspections.length - ((page - 1) * itemsPerPage + index)}
                   </TableCell>
                   <TableCell sx={{ py: 1, fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {inspection.companyName}
@@ -213,6 +216,7 @@ const InspectionList = () => {
                 </TableRow>
               ))}
             </TableBody>
+
           </Table>
         </TableContainer>
 

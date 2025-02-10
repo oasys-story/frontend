@@ -35,8 +35,9 @@ const UserList = () => {
 
   useEffect(() => {
     const filtered = users.filter(user =>
-      user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.fullName.toLowerCase().includes(searchTerm.toLowerCase())
+      user.username.toLowerCase().includes(searchTerm.toLowerCase()) || // 아이디 검색
+      user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) || // 이름 검색
+      user.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) // 업체 검색 
     );
     setFilteredUsers(filtered);
     setPage(1);
@@ -50,7 +51,11 @@ const UserList = () => {
         }
       });
       if (response.ok) {
-        const data = await response.json();
+        let data = await response.json();
+        
+        // userId 기준 내림차순 정렬 (최신 유저가 앞에 오도록)
+        data.sort((a, b) => b.userId - a.userId);
+  
         setUsers(data);
         setFilteredUsers(data);
       }
@@ -58,6 +63,7 @@ const UserList = () => {
       console.error('사용자 목록 로딩 실패:', error);
     }
   };
+  
 
   const getCurrentPageData = () => {
     const startIndex = (page - 1) * itemsPerPage;
@@ -101,7 +107,7 @@ const UserList = () => {
           size="small"
           fullWidth
           variant="outlined"
-          placeholder="이름 검색"
+          placeholder="이름, ID 또는 업체명 검색"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           sx={{ mb: 2 }}

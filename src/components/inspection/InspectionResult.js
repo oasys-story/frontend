@@ -82,31 +82,39 @@ const InspectionResult = () => {
   };
 
   useEffect(() => {
-    const fetchInspectionDetail = async () => {
-      setLoading(true);
+    const fetchData = async () => {
       try {
+        setLoading(true);
         const response = await fetch(`http://localhost:8080/api/inspections/${id}/detail`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
         });
-        if (!response.ok) {
-          throw new Error('점검 데이터를 불러오는데 실패했습니다.');
+
+        if (response.ok) {
+          const inspectionData = await response.json();
+          if (typeof inspectionData.measurements === 'string') {
+            inspectionData.measurements = JSON.parse(inspectionData.measurements);
+          }
+          if (!inspectionData.measurements) {
+            inspectionData.measurements = [];
+          }
+          setData(inspectionData);
+          if (inspectionData.phoneNumber) {
+            setPhoneNumber(inspectionData.phoneNumber);
+          }
+        } else {
+          setError('데이터를 불러오는데 실패했습니다.');
         }
-        const fetchedData = await response.json();
-        if (typeof fetchedData.measurements === 'string') {
-          fetchedData.measurements = JSON.parse(fetchedData.measurements);
-        }
-        setData(fetchedData);
       } catch (error) {
-        console.error('Error:', error);
-        setError(error.message);
+        console.error('Error fetching data:', error);
+        setError('데이터를 불러오는데 실패했습니다.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchInspectionDetail();
+    fetchData();
   }, [id]);
 
   useEffect(() => {
@@ -137,24 +145,26 @@ const InspectionResult = () => {
       return;
     }
 
+    if (!window.confirm('입력하신 번호로 알림톡을 전송하시겠습니까?')) {
+      return;
+    }
+
+    setSending(true);
     try {
-      setSending(true);
-      const token = localStorage.getItem('token');
       const response = await fetch(`http://localhost:8080/api/kakao-alert/inspection/${id}`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
-          phoneNumber: phoneNumber.replace(/-/g, '')  // 하이픈 제거
+          phoneNumber: phoneNumber.replace(/-/g, '')
         })
       });
 
       if (response.ok) {
         alert('알림톡이 전송되었습니다.');
         setSmsDialogOpen(false);
-        setPhoneNumber('');
       } else {
         const error = await response.text();
         throw new Error(error);
@@ -519,7 +529,7 @@ const InspectionResult = () => {
           }}>
             측정개소
           </Typography>
-          {data.measurements && data.measurements.map((measurement, index) => (
+          {data?.measurements && Array.isArray(data.measurements) && data.measurements.map((measurement, index) => (
             <Box key={index} sx={{ mb: 3 }}>
               <Typography variant="subtitle2" gutterBottom sx={{ mb: 2 }}>
                 측정개소 {measurement.measurementNumber}
@@ -829,36 +839,44 @@ const InspectionResult = () => {
       <Dialog open={smsDialogOpen} onClose={() => !sending && setSmsDialogOpen(false)}>
         <DialogTitle>점검 결과 알림톡 전송</DialogTitle>
         <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="전화번호"
-            type="tel"
-            fullWidth
-            value={phoneNumber}
-            onChange={handlePhoneNumberChange}
-            disabled={sending}
-            placeholder="010-0000-0000"
-            helperText="'-' 없이 입력해주세요."
-          />
+          <Box sx={{ mt: 1 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              {data?.phoneNumber ? 
+                '저장된 전화번호로 점검 결과가 전송됩니다.' : 
+                '전화번호를 입력하여 점검 결과를 전송할 수 있습니다.'}
+            </Typography>
+            <TextField
+              margin="dense"
+              label="전화번호"
+              type="tel"
+              fullWidth
+              value={phoneNumber}
+              onChange={handlePhoneNumberChange}
+              disabled={sending}
+              placeholder="010-0000-0000"
+              helperText="'-' 없이 입력해주세요."
+            />
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button 
             onClick={() => setSmsDialogOpen(false)} 
             disabled={sending}
+            size="small"
           >
             취소
           </Button>
           <Button 
             onClick={handleSendSMS} 
             variant="contained"
-            disabled={sending}
+            disabled={sending || !phoneNumber}
+            size="small"
             sx={{ 
               bgcolor: '#1C243A',
               '&:hover': { bgcolor: '#3d63b8' }
             }}
           >
-            {sending ? '전송중...' : '알림톡 전송'}
+            {sending ? '전송중...' : '전송하기'}
           </Button>
         </DialogActions>
       </Dialog>

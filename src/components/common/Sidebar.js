@@ -19,6 +19,9 @@ import {
   Alert
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import LogoutIcon from '@mui/icons-material/Logout';
+import EditIcon from '@mui/icons-material/Edit';
 
 const Sidebar = () => {
   const [open, setOpen] = useState(false);
@@ -38,6 +41,17 @@ const Sidebar = () => {
     password: ''
   });
   const navigate = useNavigate();
+  const [myPageDialog, setMyPageDialog] = useState(false);
+  const [userInfo, setUserInfo] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedUserInfo, setEditedUserInfo] = useState(null);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordErrors, setPasswordErrors] = useState({});
+  const [isPasswordMode, setIsPasswordMode] = useState(false);
 
   // 사용자 권한 확인 (ADMIN, MANAGER, USER)
   const userRole = localStorage.getItem('role')?.toUpperCase();
@@ -56,7 +70,7 @@ const Sidebar = () => {
     {
       category: '점검',
       items: [
-        { text: '점검 시작하기', path: '/inspection', requireAuth: true },
+        ...(userRole !== 'USER' ? [{ text: '점검 시작하기', path: '/inspection', requireAuth: true }] : []),
         { text: '전기 점검 목록', path: '/inspections', requireAuth: true },
         { text: '소방 점검 목록', path: '/fire-safety-inspections', requireAuth: true }
       ]
@@ -74,10 +88,10 @@ const Sidebar = () => {
     ...(isAdminOrManager ? [{
       category: '일정/관리',
       items: [
-        { text: '일정 관리', path: '/schedule-management' },
+        // { text: '일정 관리', path: '/schedule-management' },
         { text: '업체 관리', path: '/companies' },
         { text: '사용자 관리', path: '/users' },
-        { text: '설정', path: '/settings/dashboard' }
+        // { text: '설정', path: '/settings/dashboard' }
       ]
     }] : [])
   ];
@@ -165,6 +179,7 @@ const Sidebar = () => {
 
       // 로컬 스토리지 초기화
       localStorage.clear();
+      sessionStorage.clear();  // 세션 스토리지도 함께 정리
       
       // 상태 초기화
       setUser(null);
@@ -184,11 +199,11 @@ const Sidebar = () => {
       
     } catch (error) {
       console.error('로그아웃 실패:', error);
-      setSnackbar({
-        open: true,
-        message: '로그아웃 중 오류가 발생했습니다.',
-        severity: 'error'
-      });
+      // 에러가 발생해도 로컬 데이터는 정리
+      localStorage.clear();
+      sessionStorage.clear();
+      setUser(null);
+      navigate('/');
     }
   };
 
@@ -260,6 +275,200 @@ const Sidebar = () => {
 
     return () => {
       window.removeEventListener('openLoginDialog', handleOpenLoginDialog);
+    };
+  }, []);
+
+  // 사용자 정보 조회
+  const fetchUserInfo = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setUserInfo(data);
+      }
+    } catch (error) {
+      console.error('사용자 정보 조회 실패:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchUserInfo();
+    }
+  }, [user]);
+
+  // 마이페이지 다이얼로그 열기
+  const handleOpenMyPage = () => {
+    setMyPageDialog(true);
+    setOpen(false); // 사이드바 닫기
+  };
+
+  // 마이페이지 다이얼로그 닫기
+  const handleCloseMyPage = () => {
+    setMyPageDialog(false);
+  };
+
+  // 수정 모드 시작
+  const handleEditClick = () => {
+    setEditedUserInfo({ ...userInfo });
+    setIsEditing(true);
+  };
+
+  // 사용자 정보 업데이트
+  const handleUpdateUser = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:8080/api/users/${userInfo.userId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          // 기존 정보 유지하면서 수정할 필드만 업데이트
+          ...userInfo,  // 기존 정보 모두 포함
+          fullName: editedUserInfo.fullName,
+          email: editedUserInfo.email,
+          phoneNumber: editedUserInfo.phoneNumber,
+          role: userInfo.role,  // 기존 role 유지
+          active: userInfo.active,  // 기존 active 상태 유지
+          username: userInfo.username,  // 기존 username 유지
+          companyId: userInfo.companyId  // 기존 companyId 유지
+        })
+      });
+
+      if (response.ok) {
+        const updatedUser = await response.json();
+        setUserInfo(updatedUser);
+        setIsEditing(false);
+        // 로컬 스토리지의 user 정보도 업데이트
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        setSnackbar({
+          open: true,
+          message: '정보가 수정되었습니다.',
+          severity: 'success'
+        });
+      } else {
+        throw new Error('정보 수정에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('사용자 정보 수정 실패:', error);
+      setSnackbar({
+        open: true,
+        message: '정보 수정에 실패했습니다.',
+        severity: 'error'
+      });
+    }
+  };
+
+  // 비밀번호 변경
+  const handlePasswordChange = async () => {
+    // 비밀번호 유효성 검사 강화
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      setPasswordErrors({ general: '모든 비밀번호 필드를 입력해주세요.' });
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordErrors({ confirmPassword: '새 비밀번호가 일치하지 않습니다.' });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 4) {  // 최소 길이 제한
+      setPasswordErrors({ newPassword: '비밀번호는 최소 4자 이상이어야 합니다.' });
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:8080/api/users/${userInfo.userId}/password`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword
+        })
+      });
+
+      if (response.ok) {
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+        setPasswordErrors({});
+        setIsPasswordMode(false);  // 비밀번호 변경 모드 종료
+        setSnackbar({
+          open: true,
+          message: '비밀번호가 변경되었습니다.',
+          severity: 'success'
+        });
+      } else {
+        const error = await response.text();
+        setPasswordErrors({ currentPassword: '현재 비밀번호가 일치하지 않습니다.' });
+      }
+    } catch (error) {
+      console.error('비밀번호 변경 실패:', error);
+      setSnackbar({
+        open: true,
+        message: '비밀번호 변경에 실패했습니다.',
+        severity: 'error'
+      });
+    }
+  };
+
+  // 새로운 useEffect 추가
+  useEffect(() => {
+    // 브라우저 종료 시 로그아웃 처리
+    const handleBeforeUnload = () => {
+      localStorage.clear();
+    };
+
+    // 토큰 만료 체크 함수
+    const checkTokenExpiration = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const response = await fetch('http://localhost:8080/api/auth/me', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (!response.ok) {
+            // 토큰이 만료되었거나 유효하지 않은 경우
+            handleLogout();
+            setSnackbar({
+              open: true,
+              message: '로그인이 만료되었습니다. 다시 로그인해주세요.',
+              severity: 'warning'
+            });
+          }
+        } catch (error) {
+          console.error('Token validation failed:', error);
+          handleLogout();
+        }
+      }
+    };
+
+    // 브라우저 종료 이벤트 리스너 등록
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    // 토큰 만료 체크 인터벌 설정 (5분마다 체크)
+    const tokenCheckInterval = setInterval(checkTokenExpiration, 5 * 60 * 1000);
+
+    // 컴포넌트 언마운트 시 정리
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      clearInterval(tokenCheckInterval);
     };
   }, []);
 
@@ -364,11 +573,10 @@ const Sidebar = () => {
             </React.Fragment>
           ))}
 
-          {/* 로그인/로그아웃 버튼 */}
-          <Divider />
+          {/* 로그인/마이페이지 버튼 */}
           <ListItem
             button
-            onClick={() => user ? handleLogout() : setLoginDialogOpen(true)}
+            onClick={user ? handleOpenMyPage : () => setLoginDialogOpen(true)}
             sx={{
               py: 1.5,
               '&:hover': {
@@ -377,7 +585,7 @@ const Sidebar = () => {
             }}
           >
             <ListItemText 
-              primary={user ? '로그아웃' : '로그인'} 
+              primary={user ? '마이페이지' : '로그인'} 
               secondary={user ? user.fullName : null}
               sx={{ 
                 '& .MuiListItemText-primary': { 
@@ -387,7 +595,34 @@ const Sidebar = () => {
                 }
               }}
             />
+            {user && <AccountCircleIcon color="action" />}
           </ListItem>
+
+          {/* 로그아웃 버튼 (로그인 시에만 표시) */}
+          {user && (
+            <ListItem
+              button
+              onClick={handleLogout}
+              sx={{
+                py: 1.5,
+                '&:hover': {
+                  bgcolor: 'rgba(75, 119, 216, 0.08)',
+                }
+              }}
+            >
+              <ListItemText 
+                primary="로그아웃"
+                sx={{ 
+                  '& .MuiListItemText-primary': { 
+                    color: '#2A2A2A',
+                    fontWeight: 500,
+                    fontSize: '0.9rem'
+                  }
+                }}
+              />
+              <LogoutIcon color="action" />
+            </ListItem>
+          )}
         </Box>
       </Drawer>
 
@@ -450,6 +685,230 @@ const Sidebar = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* 마이페이지 다이얼로그 */}
+      <Dialog 
+        open={myPageDialog} 
+        onClose={handleCloseMyPage}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{
+          sx: {
+            m: 2,  // 모바일에서 여백 추가
+            width: 'calc(100% - 32px)',  // 전체 너비에서 여백 제외
+            maxWidth: '400px',  // 최대 너비 제한
+            borderRadius: 2  // 모서리 둥글게
+          }
+        }}
+      >
+        <DialogTitle 
+          sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            p: 2,  // 패딩 축소
+            fontSize: '1.1rem'  // 제목 크기 축소
+          }}
+        >
+          내 정보
+          {!isEditing && (
+            <IconButton 
+              onClick={handleEditClick}
+              size="small"  // 아이콘 버튼 크기 축소
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+          )}
+        </DialogTitle>
+        <DialogContent sx={{ p: 2 }}>
+          {userInfo && !isEditing ? (
+            // 조회 모드
+            <List>
+              <ListItem>
+                <ListItemText 
+                  primary="이름" 
+                  secondary={userInfo.fullName} 
+                />
+              </ListItem>
+              <Divider />
+              <ListItem>
+                <ListItemText 
+                  primary="아이디" 
+                  secondary={userInfo.username} 
+                />
+              </ListItem>
+              <Divider />
+              <ListItem>
+                <ListItemText 
+                  primary="이메일" 
+                  secondary={userInfo.email || '-'} 
+                />
+              </ListItem>
+              <Divider />
+              <ListItem>
+                <ListItemText 
+                  primary="연락처" 
+                  secondary={userInfo.phoneNumber || '-'} 
+                />
+              </ListItem>
+              <Divider />
+              <ListItem>
+                <ListItemText 
+                  primary="소속" 
+                  secondary={userInfo.companyName || '-'} 
+                />
+              </ListItem>
+              <Divider />
+              <ListItem>
+                <ListItemText 
+                  primary="권한" 
+                  secondary={
+                    userInfo.role === 'ADMIN' ? '관리자' :
+                    userInfo.role === 'MANAGER' ? '매니저' : '일반사용자'
+                  } 
+                />
+              </ListItem>
+            </List>
+          ) : (
+            // 수정 모드
+            <Box sx={{ mt: 2 }}>
+              {!isPasswordMode ? (
+                // 기본 정보 수정 모드
+                <>
+                  <TextField
+                    fullWidth
+                    label="이름"
+                    value={editedUserInfo?.fullName || ''}
+                    onChange={(e) => setEditedUserInfo({...editedUserInfo, fullName: e.target.value})}
+                    margin="normal"
+                  />
+                  <TextField
+                    fullWidth
+                    label="이메일"
+                    value={editedUserInfo?.email || ''}
+                    onChange={(e) => setEditedUserInfo({...editedUserInfo, email: e.target.value})}
+                    margin="normal"
+                  />
+                  <TextField
+                    fullWidth
+                    label="연락처"
+                    value={editedUserInfo?.phoneNumber || ''}
+                    onChange={(e) => setEditedUserInfo({...editedUserInfo, phoneNumber: e.target.value})}
+                    margin="normal"
+                  />
+                </>
+              ) : (
+                // 비밀번호 변경 모드
+                <>
+                  <Typography variant="subtitle1" sx={{ mb: 2 }}>비밀번호 변경</Typography>
+                  <TextField
+                    fullWidth
+                    type="password"
+                    label="현재 비밀번호"
+                    value={passwordData.currentPassword}
+                    onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                    error={Boolean(passwordErrors.currentPassword)}
+                    helperText={passwordErrors.currentPassword}
+                    margin="normal"
+                  />
+                  <TextField
+                    fullWidth
+                    type="password"
+                    label="새 비밀번호"
+                    value={passwordData.newPassword}
+                    onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
+                    error={Boolean(passwordErrors.newPassword)}
+                    helperText={passwordErrors.newPassword}
+                    margin="normal"
+                  />
+                  <TextField
+                    fullWidth
+                    type="password"
+                    label="새 비밀번호 확인"
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                    error={Boolean(passwordErrors.confirmPassword)}
+                    helperText={passwordErrors.confirmPassword}
+                    margin="normal"
+                  />
+                  {passwordErrors.general && (
+                    <Typography color="error" variant="body2" sx={{ mt: 1 }}>
+                      {passwordErrors.general}
+                    </Typography>
+                  )}
+                </>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        {isEditing && (
+          <DialogActions sx={{ p: 1.5, gap: 1 }}>  {/* 버튼 간격 조정 */}
+            <Button 
+              onClick={() => {
+                setIsEditing(false);
+                setIsPasswordMode(false);
+                setPasswordData({
+                  currentPassword: '',
+                  newPassword: '',
+                  confirmPassword: ''
+                });
+                setPasswordErrors({});
+              }}
+              size="small"  // 버튼 크기 축소
+              sx={{ minWidth: '60px' }}  // 최소 너비 설정
+            >
+              취소
+            </Button>
+            {!isPasswordMode ? (
+              <>
+                <Button 
+                  onClick={() => setIsPasswordMode(true)} 
+                  color="primary"
+                  size="small"
+                  sx={{ minWidth: '100px' }}
+                >
+                  비밀번호 변경
+                </Button>
+                <Button 
+                  onClick={handleUpdateUser} 
+                  variant="contained"
+                  size="small"
+                  sx={{ 
+                    minWidth: '80px',
+                    bgcolor: '#1C243A',
+                    '&:hover': { bgcolor: '#3d63b8' }
+                  }}
+                >
+                  정보 수정
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button 
+                  onClick={() => setIsPasswordMode(false)} 
+                  color="primary"
+                  size="small"
+                  sx={{ minWidth: '60px' }}
+                >
+                  돌아가기
+                </Button>
+                <Button 
+                  onClick={handlePasswordChange} 
+                  variant="contained"
+                  size="small"
+                  sx={{ 
+                    minWidth: '100px',
+                    bgcolor: '#1C243A',
+                    '&:hover': { bgcolor: '#3d63b8' }
+                  }}
+                >
+                  비밀번호 변경
+                </Button>
+              </>
+            )}
+          </DialogActions>
+        )}
+      </Dialog>
     </>
   );
 };

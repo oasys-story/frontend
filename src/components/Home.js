@@ -54,7 +54,7 @@ const Home = () => {
       const response = await fetch('http://localhost:8080/api/notices');
       if (response.ok) {
         const data = await response.json();
-        setNotices(data.slice(0, 4));
+        setNotices(data.slice(0, 3));
       }
     } catch (error) {
       console.error('공지사항 로딩 실패:', error);
@@ -66,7 +66,7 @@ const Home = () => {
       const response = await fetch('http://localhost:8080/api/inquiries');
       if (response.ok) {
         const data = await response.json();
-        setInquiries(data.slice(0, 4)); // 최근 4개만
+        setInquiries(data.slice(0, 3)); // 최근 4개만
       }
     } catch (error) {
       console.error('문의사항 로딩 실패:', error);
@@ -100,13 +100,15 @@ const Home = () => {
   };
 
   return (
-    <Box sx={{ 
+    <Box   sx={{
       maxWidth: '430px',
       margin: '0 auto',
-      minHeight: '100vh',
+      minHeight: '100vh', // ✅ 여기 수정 (maxHeight → minHeight)
       background: 'linear-gradient(to bottom, #FFFFFF, #F8F9FA)',
       boxShadow: '0px 0px 20px rgba(0,0,0,0.1)',
-      position: 'relative'
+      position: 'relative',
+      display: 'flex',
+      flexDirection: 'column', // 🛠️ 내용을 세로로 정렬
     }}>
       {/* 상단 로고 영역 */}
       <AppBar 
@@ -394,6 +396,41 @@ const Home = () => {
         </Grid>
       </Box>
 
+
+      {/* 회사 정보 (하단 고정 X, 페이지 최하단에만 위치) */}
+      <Box sx={{ textAlign: 'center', mt: 6, mb: 4 }}>
+        <Grid container alignItems="center" justifyContent="center" spacing={1}>
+          <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center' }}>
+            <Box
+              component="img"
+              src="/images/dawoo.png"
+              alt="회사 로고"
+              sx={{
+                height: '40px',  // 로고 크기 조절
+                width: 'auto',
+              }}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'gray', fontSize: '0.75rem' }}>
+              (주) 다우
+            </Typography>
+          </Grid>
+          <Grid item xs={12}>
+            <Typography variant="body2" sx={{ color: 'gray', fontSize: '0.7rem' }}>
+              대전광역시 서구 계룡로 553번안길 63
+            </Typography>
+          </Grid>
+          <Grid item xs={12}>
+            <Typography variant="body2" sx={{ color: 'gray', fontSize: '0.7rem' }}>
+              TEL: 042) 526-4805 | FAX: 042) 526-4806
+            </Typography>
+          </Grid>
+        </Grid>
+      </Box>
+
+
+    {/* 모달 */}
       <InquiryDetailModal 
         open={openInquiryModal}
         inquiry={selectedInquiry}

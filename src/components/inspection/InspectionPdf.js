@@ -22,24 +22,42 @@ Font.register({
 // PDF 스타일 정의
 const styles = StyleSheet.create({
   page: {
-    padding: 30,
+    padding: 20,
     backgroundColor: 'white',
-    fontFamily: 'Pretendard',  // 기본 폰트 설정
+    fontFamily: 'Pretendard',
+    position: 'relative', // 로고 배치 위한 설정
+  },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logo: {
+    width: 80,
+    height: 30,
+  },
+  companyInfo: {
+    fontSize: 8,
+    marginLeft: 10,
+  },
+  signatureTable: {
+    border: 1,
+    borderColor: '#000',
+    width: 200,
   },
   header: {
-    fontSize: 16,
+    fontSize: 14,
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
     borderBottom: 1,
     paddingBottom: 10,
     fontFamily: 'Pretendard',
     fontWeight: 700,  // 볼드 처리
   },
   section: {
-    marginBottom: 15,
+    marginBottom: 8,
   },
   title: {
-    fontSize: 12,
+    fontSize: 10,
     backgroundColor: '#1C243A',
     color: 'white',
     padding: 5,
@@ -56,31 +74,41 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   topLeftSection: {
-    width: '60%'
+    width: '50%' // 점검자 제거 후 너비 조정
   },
-  topRightSection: {
-    width: '40%',
-    paddingLeft: 10
+  approvalTable: {
+    width: '50%',
+    border: 1,
+    borderColor: '#000',
   },
-  signatureSection: {
+  approvalRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 20,
   },
-  signatureContainer: {
-    alignItems: 'center'
-  },
-  signatureLabel: {
-    fontSize: 8,
-    marginBottom: 2
+  approvalCell: {
+    flex: 1,
+    borderRight: 1,
+    borderBottom: 1,
+    borderColor: '#000',
+    textAlign: 'center',
+    fontSize: 10,
+    paddingVertical: 3,
   },
   signatureBox: {
-    border: 1,
-    borderColor: '#1C243A',
-    width: 100,
-    height: 50,
-    padding: 2,
-    backgroundColor: '#f8f8f8'
+    flex: 1,
+    height: 20,
+    borderRight: 1,
+    borderBottom: 1,
+    borderColor: '#000',
+    backgroundColor: '#f8f8f8',
+  },
+  signatureBoxBottom: {
+    flex: 1,
+    height: 20,
+    borderRight: 0,
+    borderBottom: 0,
+    borderColor: '#000',
+    backgroundColor: '#f8f8f8',
+
   },
   infoRow: {
     flexDirection: 'row',
@@ -88,7 +116,7 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     width: '25%',
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: 'Pretendard',
   },
   infoValue: {
@@ -117,8 +145,8 @@ const styles = StyleSheet.create({
   },
   tableCell: {
     flex: 1,
-    padding: 5,
-    fontSize: 10,
+    padding: 3,
+    fontSize: 8,
     textAlign: 'center',
   },
   tableCellWithBorder: {
@@ -214,8 +242,24 @@ const styles = StyleSheet.create({
   },
   signatureRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10
+  },
+  signatureCell: {
+    flex: 1,
+    borderRight: 1,
+    borderBottom: 1,
+    borderColor: '#000',
+    textAlign: 'center',
+    fontSize: 9,
+    paddingVertical: 3,
+  },
+    signatureCellRight: {
+    flex: 1,
+    borderRight: 0,
+    borderBottom: 1,
+    borderColor: '#000',
+    textAlign: 'center',
+    fontSize: 9,
+    paddingVertical: 3,
   },
   checklistTable: {
     width: '100%',
@@ -225,7 +269,7 @@ const styles = StyleSheet.create({
   },
   checklistRow: {
     flexDirection: 'row',
-    height: 60,  // 고정 높이 설정
+    height: 40,  // 고정 높이 설정
   },
   firstColumn: {
     width: '10%',
@@ -265,7 +309,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   checklistValue: {
-    fontSize: 10,
+    fontSize: 9,
     textAlign: 'center',
   },
   specialNotesSection: {
@@ -356,8 +400,22 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontFamily: 'Pretendard',
     minHeight: 50,  // 의견 작성 공간 확보
-  }
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20, // 상단 여백 추가
+    borderTop: 1,
+    paddingTop: 10, // 상단 패딩 추가
+  },
+  noBorderTop: {
+    borderTop: 0, // 상단 구분선 제거
+  },
+  noBorderBottom: {
+    borderBottom: 0, // 하단 구분선 제거
+  },
 });
+
 
 // PDF 문서 컴포넌트
 const InspectionPDF = ({ data, checklistLabels, getStatusText }) => (
@@ -367,7 +425,7 @@ const InspectionPDF = ({ data, checklistLabels, getStatusText }) => (
 
       {/* 상단 섹션 */}
       <View style={styles.topSection}>
-        {/* 좌측: 기본 정보 */}
+        {/* 좌측: 기본 정보 (점검자 제거) */}
         <View style={styles.topLeftSection}>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>업체명</Text>
@@ -377,32 +435,28 @@ const InspectionPDF = ({ data, checklistLabels, getStatusText }) => (
             <Text style={styles.infoLabel}>점검일자</Text>
             <Text style={styles.infoValue}>{data.inspectionDate}</Text>
           </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>점검자</Text>
-            <Text style={styles.infoValue}>{data.managerName}</Text>
+        </View>
+
+        {/* 우측: 결재란 (이미지 참고) */}
+        <View style={styles.approvalTable}>
+          {/* 첫 번째 행 (결재) - 구분선 없음 */}
+          <View style={styles.approvalRow}>
+            <Text style={[styles.approvalCell, styles.noBorderBottom]}>결</Text>
+            <Text style={styles.approvalCell}>담당</Text>
+            <Text style={styles.approvalCell}>행정실장</Text>
+            <Text style={styles.approvalCell}>교장</Text>
+          </View>
+          {/* 두 번째 행 (결재) - 구분선 없음 */}
+          <View style={styles.approvalRow}>
+            <Text style={[styles.approvalCell, styles.noBorderTop]}>재</Text>
+            <View style={styles.signatureBox} />
+            <View style={styles.signatureBox} />
+            <View style={styles.signatureBox} />
           </View>
         </View>
 
-        {/* 우측: 서명란 */}
-        <View style={styles.signatureSection}>
-          <View style={styles.signatureContainer}>
-            <Text style={styles.signatureLabel}>점검자</Text>
-            {data.signature ? (
-              <Image src={data.signature} style={styles.signatureBox} />
-            ) : (
-              <View style={styles.signatureBox} />
-            )}
-          </View>
-          <View style={styles.signatureContainer}>
-            <Text style={styles.signatureLabel}>관리자</Text>
-            {data.managerSignature ? (
-              <Image src={data.managerSignature} style={styles.signatureBox} />
-            ) : (
-              <View style={styles.signatureBox} />
-            )}
-          </View>
-        </View>
       </View>
+
 
       {/* 기본사항 섹션 */}
       <View style={styles.section}>
@@ -585,6 +639,36 @@ const InspectionPDF = ({ data, checklistLabels, getStatusText }) => (
         </View>
       </View>
 
+      {/* 하단 레이아웃 */}
+      <View style={styles.footer}>
+        {/* 왼쪽 - 로고 & 회사 정보 */}
+        <View style={styles.logoContainer}>
+          <Image src="/images/dawoo2.png" style={styles.logo} />
+          <View style={styles.companyInfo}>
+            <Text>(주) 다우</Text>
+            <Text>대전광역시 서구 계룡로 553번안길 63</Text>
+            <Text>TEL: 042)526-4805</Text>
+            <Text>FAX: 042)526-4806</Text>
+          </View>
+        </View>
+
+        {/* 오른쪽 - 서명란 */}
+        <View style={styles.signatureTable}>
+          <View style={styles.signatureRow}>
+            <Text style={[styles.signatureCell, styles.noBorderBottom]}>확</Text>
+            <Text style={styles.signatureCell}>점검 입회자</Text>
+            <Text style={styles.signatureCell}></Text>
+            <Text style={styles.signatureCellRight}>서명 또는 인</Text>
+          </View>
+          <View style={styles.signatureRow}>
+            <Text style={[styles.signatureCell, styles.noBorderTop]}>인</Text>
+
+            <Text style={styles.signatureCell}>전기 안전 관리자</Text>
+            <Text style={styles.signatureCell}>{data.managerName}</Text>
+            <Image src={data.signature || '/images/signature.png'} style={styles.signatureBoxBottom} />
+          </View>
+        </View>
+      </View>
       {/* 이미지 섹션 */}
       {/* {data.images && data.images.length > 0 && (
         <View style={styles.imageSection}>

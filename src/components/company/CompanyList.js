@@ -45,7 +45,11 @@ const CompanyList = () => {
     try {
       const response = await fetch('http://localhost:8080/api/companies');
       if (response.ok) {
-        const data = await response.json();
+        let data = await response.json();
+        
+        // companyId 기준 내림차순 정렬 (최신 등록된 업체가 앞에 오도록)
+        data.sort((a, b) => b.companyId - a.companyId);
+  
         setCompanies(data);
         setFilteredCompanies(data);
       }
@@ -53,6 +57,7 @@ const CompanyList = () => {
       console.error('업체 목록 로딩 실패:', error);
     }
   };
+  
 
   // 현재 페이지의 데이터만 반환
   const getCurrentPageData = () => {
