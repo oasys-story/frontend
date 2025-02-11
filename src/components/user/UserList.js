@@ -47,7 +47,7 @@ const UserList = () => {
     try {
       const response = await fetch('http://localhost:8080/api/users', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
         }
       });
       if (response.ok) {

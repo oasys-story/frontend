@@ -16,7 +16,7 @@ import Categories from './Categories';
 
 const Settings = () => {
   const navigate = useNavigate();
-  const userRole = localStorage.getItem('role')?.toUpperCase();
+  const userRole = sessionStorage.getItem('role')?.toUpperCase();
   const [selectedTab, setSelectedTab] = useState('/settings/dashboard');
 
   const menuItems = [

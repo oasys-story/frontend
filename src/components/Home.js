@@ -18,6 +18,7 @@ import Carousel from 'react-material-ui-carousel';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import NoticeDetailModal from './notice/NoticeDetailModal';
 import InquiryDetailModal from './inquiry/InquiryDetailModal';
+import HomeChatBot from './customer/HomeChatBot';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -32,15 +33,16 @@ const Home = () => {
   // 캐러셀 아이템
   const carouselItems = [
     {
-      image: "/images/safe2.png",
-      title: "안전한 작업환경 구축",
-      description: "최고의 안전 관리 시스템"
+      image: "/images/inspection.jpg",
+      title: "정밀 안전 점검",
+      description: "현장 점검부터 결과 확인까지, 신뢰할 수 있는 데이터를 제공합니다."
     },
     {
-      image: "/images/safe.png",
-      title: "24시간 모니터링",
-      description: "실시간 안전 점검"
-    },
+      image: "/images/inspection2.jpg",
+      title: "즉각적인 결과 피드백",
+      description: "점검 후 바로 안전 결과를 확인하고, 필요한 조치를 취하세요."
+    }
+    
   ];
 
   useEffect(() => {
@@ -123,7 +125,7 @@ const Home = () => {
         <Toolbar sx={{ justifyContent: 'center', minHeight: '60px' }}>
           <Box
             component="img"
-            src="/images/dawoo2.png"
+            src="/images/dawoo.png"
             alt="로고"
             sx={{
               height: '50px',
@@ -403,7 +405,7 @@ const Home = () => {
           <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center' }}>
             <Box
               component="img"
-              src="/images/dawoo.png"
+              src="/images/dawoo2.png"
               alt="회사 로고"
               sx={{
                 height: '40px',  // 로고 크기 조절
@@ -413,22 +415,24 @@ const Home = () => {
           </Grid>
           <Grid item xs={12}>
             <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'gray', fontSize: '0.75rem' }}>
-              (주) 다우
+            (주) 다우
             </Typography>
           </Grid>
           <Grid item xs={12}>
             <Typography variant="body2" sx={{ color: 'gray', fontSize: '0.7rem' }}>
-              대전광역시 서구 계룡로 553번안길 63
+            대전광역시 서구 계룡로 553번안길 63
             </Typography>
           </Grid>
           <Grid item xs={12}>
             <Typography variant="body2" sx={{ color: 'gray', fontSize: '0.7rem' }}>
-              TEL: 042) 526-4805 | FAX: 042) 526-4806
+            TEL: 042) 526-4805 | FAX: 042) 526-4806
             </Typography>
           </Grid>
         </Grid>
       </Box>
 
+      {/* 챗봇 추가 */}
+      <HomeChatBot />
 
     {/* 모달 */}
       <InquiryDetailModal 

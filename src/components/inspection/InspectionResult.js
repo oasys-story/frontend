@@ -87,7 +87,7 @@ const InspectionResult = () => {
         setLoading(true);
         const response = await fetch(`http://localhost:8080/api/inspections/${id}/detail`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${sessionStorage.getItem('token')}`
           }
         });
 
@@ -119,7 +119,7 @@ const InspectionResult = () => {
 
   useEffect(() => {
     // 컴포넌트 마운트 시 ADMIN 권한 체크
-    const userRole = localStorage.getItem('role');
+    const userRole = sessionStorage.getItem('role');
     setIsAdmin(userRole === 'ADMIN');
   }, []);
 
@@ -155,7 +155,7 @@ const InspectionResult = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
         },
         body: JSON.stringify({
           phoneNumber: phoneNumber.replace(/-/g, '')
@@ -184,7 +184,7 @@ const InspectionResult = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
         },
         body: JSON.stringify({ signature: signatureData })
       });
@@ -214,7 +214,7 @@ const InspectionResult = () => {
         const response = await fetch(`http://localhost:8080/api/inspections/${id}`, {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${sessionStorage.getItem('token')}`
           }
         });
 
@@ -399,7 +399,7 @@ const InspectionResult = () => {
   };
 
   // 권한 체크
-  const currentUserId = localStorage.getItem('userId');
+  const currentUserId = sessionStorage.getItem('userId');
   
   // 수정/삭제 권한 체크
   const hasPermission = isAdmin || (data?.userId === parseInt(currentUserId));
@@ -705,7 +705,7 @@ const InspectionResult = () => {
               ) : (
                 <Box
                   onClick={() => 
-                    localStorage.getItem('role') === 'USER' 
+                    sessionStorage.getItem('role') === 'USER' 
                       ? setSignatureDialogOpen(true) 
                       : alert('점검대상업체만 서명할 수 있습니다.')
                   }
@@ -718,15 +718,15 @@ const InspectionResult = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    cursor: localStorage.getItem('role') === 'USER' ? 'pointer' : 'not-allowed',
-                    opacity: localStorage.getItem('role') === 'USER' ? 1 : 0.6,
+                    cursor: sessionStorage.getItem('role') === 'USER' ? 'pointer' : 'not-allowed',
+                    opacity: sessionStorage.getItem('role') === 'USER' ? 1 : 0.6,
                     '&:hover': {
-                      bgcolor: localStorage.getItem('role') === 'USER' ? 'rgba(28, 36, 58, 0.04)' : undefined
+                      bgcolor: sessionStorage.getItem('role') === 'USER' ? 'rgba(28, 36, 58, 0.04)' : undefined
                     }
                   }}
                 >
                   <Typography color="primary">
-                    {localStorage.getItem('role') === 'USER' ? '서명하기' : '점검대상업체 전용'}
+                    {sessionStorage.getItem('role') === 'USER' ? '서명하기' : '점검대상업체 전용'}
                   </Typography>
                 </Box>
               )}

@@ -16,12 +16,15 @@ import {
   DialogActions,
   Button,
   Snackbar,
-  Alert
+  Alert,
+  Link,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import EditIcon from '@mui/icons-material/Edit';
+
+
 
 const Sidebar = () => {
   const [open, setOpen] = useState(false);
@@ -30,7 +33,7 @@ const Sidebar = () => {
     username: '',
     password: ''
   });
-  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')));
+  const [user, setUser] = useState(JSON.parse(sessionStorage.getItem('user')));
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -54,7 +57,7 @@ const Sidebar = () => {
   const [isPasswordMode, setIsPasswordMode] = useState(false);
 
   // 사용자 권한 확인 (ADMIN, MANAGER, USER)
-  const userRole = localStorage.getItem('role')?.toUpperCase();
+  const userRole = sessionStorage.getItem('role')?.toUpperCase();
   const isAdminOrManager = userRole === 'ADMIN' || userRole === 'MANAGER';
 
   // 메뉴 아이템 필터링
@@ -128,11 +131,11 @@ const Sidebar = () => {
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('userId', data.user.userId);
-        localStorage.setItem('role', data.user.role);
-        localStorage.setItem('username', data.user.username);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        sessionStorage.setItem('token', data.token);
+        sessionStorage.setItem('userId', data.user.userId);
+        sessionStorage.setItem('role', data.user.role);
+        sessionStorage.setItem('username', data.user.username);
+        sessionStorage.setItem('user', JSON.stringify(data.user));
         setUser(data.user);
         setLoginDialogOpen(false);
         setErrorMessage({ username: '', password: '' });
@@ -167,7 +170,7 @@ const Sidebar = () => {
 
   const handleLogout = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       if (token) {
         await fetch('http://localhost:8080/api/auth/logout', {
           method: 'POST',
@@ -177,8 +180,7 @@ const Sidebar = () => {
         });
       }
 
-      // 로컬 스토리지 초기화
-      localStorage.clear();
+
       sessionStorage.clear();  // 세션 스토리지도 함께 정리
       
       // 상태 초기화
@@ -200,7 +202,6 @@ const Sidebar = () => {
     } catch (error) {
       console.error('로그아웃 실패:', error);
       // 에러가 발생해도 로컬 데이터는 정리
-      localStorage.clear();
       sessionStorage.clear();
       setUser(null);
       navigate('/');
@@ -210,7 +211,7 @@ const Sidebar = () => {
   const handleMenuClick = (item) => {
     // 로그인 필요한 메뉴 체크
     if (item.requireAuth) {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       if (!token) {
         setSnackbar({
           open: true,
@@ -251,7 +252,7 @@ const Sidebar = () => {
 
   // 테스트용 API 호출 함수 추가
 //   const testAuthenticatedRequest = async () => {
-//     const token = localStorage.getItem('token');
+//     const token = sessionStorage.getItem('token');
 //     try {
 //       const response = await fetch('http://localhost:8080/api/users', {
 //         headers: {
@@ -281,7 +282,7 @@ const Sidebar = () => {
   // 사용자 정보 조회
   const fetchUserInfo = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const response = await fetch('http://localhost:8080/api/auth/me', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -322,7 +323,7 @@ const Sidebar = () => {
   // 사용자 정보 업데이트
   const handleUpdateUser = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const response = await fetch(`http://localhost:8080/api/users/${userInfo.userId}`, {
         method: 'PUT',
         headers: {
@@ -347,7 +348,7 @@ const Sidebar = () => {
         setUserInfo(updatedUser);
         setIsEditing(false);
         // 로컬 스토리지의 user 정보도 업데이트
-        localStorage.setItem('user', JSON.stringify(updatedUser));
+        sessionStorage.setItem('user', JSON.stringify(updatedUser));
         setSnackbar({
           open: true,
           message: '정보가 수정되었습니다.',
@@ -385,7 +386,7 @@ const Sidebar = () => {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const response = await fetch(`http://localhost:8080/api/users/${userInfo.userId}/password`, {
         method: 'PUT',
         headers: {
@@ -429,12 +430,12 @@ const Sidebar = () => {
   useEffect(() => {
     // 브라우저 종료 시 로그아웃 처리
     const handleBeforeUnload = () => {
-      localStorage.clear();
+      sessionStorage.clear();
     };
 
     // 토큰 만료 체크 함수
     const checkTokenExpiration = async () => {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       if (token) {
         try {
           const response = await fetch('http://localhost:8080/api/auth/me', {
@@ -459,15 +460,14 @@ const Sidebar = () => {
       }
     };
 
-    // 브라우저 종료 이벤트 리스너 등록
-    window.addEventListener('beforeunload', handleBeforeUnload);
+
     
     // 토큰 만료 체크 인터벌 설정 (5분마다 체크)
     const tokenCheckInterval = setInterval(checkTokenExpiration, 5 * 60 * 1000);
 
     // 컴포넌트 언마운트 시 정리
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+
       clearInterval(tokenCheckInterval);
     };
   }, []);
@@ -496,7 +496,7 @@ const Sidebar = () => {
         onClose={toggleDrawer(false)}
         PaperProps={{
           sx: {
-            width: '70%',  // 모바일에서는 화면의 80%
+            width: '80%',  // 모바일에서는 화면의 80%
             maxWidth: '320px',  // 최대 너비 제한
             '@media (min-width: 430px)': {
               left: 'calc((100% - 430px) / 2)',  // 모바일 컨테이너 내부에 위치
@@ -511,11 +511,105 @@ const Sidebar = () => {
         }}
       >
         <Box sx={{ width: '100%' }} role="presentation">
-          <Box sx={{ p: 2, bgcolor: '#1C243A' }}>
-            <Typography variant="h6" sx={{ color: 'white' }}>
-              AS 센터
-            </Typography>
-          </Box>
+
+          {/* 여기 */}
+          {user ? (
+            <Box
+              sx={{
+                p: 2,
+                mt: 2,
+                textAlign: 'center',
+                borderBottom: '1px solid #e0e0e0',
+              }}
+            >
+              {/* 사용자 아바타 */}
+              <AccountCircleIcon color="action" sx={{ fontSize: 48, mb: 1 }} />
+              
+              {/* 사용자 이름 */}
+              <Typography
+                variant="h6"
+                sx={{ color: '#2A2A2A', fontWeight: 600, mb: 1 }}
+              >
+                {user.fullName}
+              </Typography>
+              
+              {/* 버튼 영역: 마이페이지와 로그아웃을 수평으로 배치 */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: 1,
+                }}
+              >
+                <Button
+                  onClick={handleOpenMyPage}
+                  sx={{
+                    textTransform: 'none',
+                    color: '#2A2A2A',
+                    fontWeight: 500,
+                    fontSize: '0.9rem',
+                  }}
+                  startIcon={<AccountCircleIcon color="action" />}
+                >
+                  마이페이지
+                </Button>
+                <Button
+                  onClick={handleLogout}
+                  sx={{
+                    textTransform: 'none',
+                    color: '#2A2A2A',
+                    fontWeight: 500,
+                    fontSize: '0.9rem',
+                  }}
+                  startIcon={<LogoutIcon color="action" />}
+                >
+                  로그아웃
+                </Button>
+              </Box>
+            </Box>
+          ) : (
+            <Box
+              sx={{
+                p: 2,
+                mt: 2,
+                textAlign: 'center',
+                borderBottom: '1px solid #e0e0e0',
+              }}
+            >
+              <Typography variant="subtitle1" sx={{ color: '#2A2A2A', mb: 1 }}>
+                사이트 이용을 위해 로그인 해주세요.
+              </Typography>
+              <Button
+                variant="outlined"
+                onClick={() => setLoginDialogOpen(true)}
+                sx={{ textTransform: 'none', mb: 1 }}
+              >
+                로그인
+              </Button>
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                <Button
+                  onClick={() => {
+                    navigate('/tutorial-onboarding');
+                    setOpen(false);  // 사이드바 닫기
+                  }}
+                  sx={{
+                    textTransform: 'none',
+                    color: '#1976d2',
+                    fontSize: '0.875rem',
+                    '&:hover': {
+                      backgroundColor: 'transparent',
+                      textDecoration: 'underline'
+                    }
+                  }}
+                >
+                  처음 오셨나요?
+                </Button>
+              </Typography>
+            </Box>
+          )}
+
+
+
           
           {menuItems.map((category, index) => (
             <React.Fragment key={index}>
@@ -546,7 +640,7 @@ const Sidebar = () => {
                       '&:hover': {
                         bgcolor: 'rgba(75, 119, 216, 0.08)',
                       },
-                      ...(item.requireAuth && !localStorage.getItem('token') && {
+                      ...(item.requireAuth && !sessionStorage.getItem('token') && {
                         opacity: 0.6,
                         '&::after': {
                           content: '"*"',
@@ -573,56 +667,7 @@ const Sidebar = () => {
             </React.Fragment>
           ))}
 
-          {/* 로그인/마이페이지 버튼 */}
-          <ListItem
-            button
-            onClick={user ? handleOpenMyPage : () => setLoginDialogOpen(true)}
-            sx={{
-              py: 1.5,
-              '&:hover': {
-                bgcolor: 'rgba(75, 119, 216, 0.08)',
-              }
-            }}
-          >
-            <ListItemText 
-              primary={user ? '마이페이지' : '로그인'} 
-              secondary={user ? user.fullName : null}
-              sx={{ 
-                '& .MuiListItemText-primary': { 
-                  color: '#2A2A2A',
-                  fontWeight: 500,
-                  fontSize: '0.9rem'
-                }
-              }}
-            />
-            {user && <AccountCircleIcon color="action" />}
-          </ListItem>
-
-          {/* 로그아웃 버튼 (로그인 시에만 표시) */}
-          {user && (
-            <ListItem
-              button
-              onClick={handleLogout}
-              sx={{
-                py: 1.5,
-                '&:hover': {
-                  bgcolor: 'rgba(75, 119, 216, 0.08)',
-                }
-              }}
-            >
-              <ListItemText 
-                primary="로그아웃"
-                sx={{ 
-                  '& .MuiListItemText-primary': { 
-                    color: '#2A2A2A',
-                    fontWeight: 500,
-                    fontSize: '0.9rem'
-                  }
-                }}
-              />
-              <LogoutIcon color="action" />
-            </ListItem>
-          )}
+          
         </Box>
       </Drawer>
 

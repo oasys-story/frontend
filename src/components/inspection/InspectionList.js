@@ -31,7 +31,7 @@ const InspectionList = () => {
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         const response = await fetch('http://localhost:8080/api/auth/me', {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -52,7 +52,7 @@ const InspectionList = () => {
 
   const fetchInspections = async (user) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       if (!token) {
         console.error('토큰이 없습니다. 로그인이 필요합니다.');
         return;

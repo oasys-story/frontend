@@ -120,7 +120,7 @@ const NoticeList = () => {
     try {
       const response = await fetch('http://localhost:8080/api/notices', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
         }
       });
       if (response.ok) {
@@ -157,7 +157,7 @@ const NoticeList = () => {
       const formData = new FormData();
       formData.append('title', newNotice.title);
       formData.append('content', newNotice.content);
-      formData.append('userId', localStorage.getItem('userId'));
+      formData.append('userId', sessionStorage.getItem('userId'));
       formData.append('popup', newNotice.popup);
       if (newNotice.popup) {
         formData.append('popupStartDate', newNotice.popupStartDate.toISOString());
@@ -172,7 +172,7 @@ const NoticeList = () => {
       const response = await fetch('http://localhost:8080/api/notices', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
         },
         body: formData
       });
@@ -244,7 +244,7 @@ const NoticeList = () => {
   };
 
   const handleAddNoticeClick = () => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (!token) {
       setSnackbar({
         open: true,

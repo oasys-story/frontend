@@ -226,15 +226,30 @@ const styles = StyleSheet.create({
     left: 0,
     fontSize: 8,
   },
-  imageGrid: {
+  imagesContainer: {
+    marginTop: 10,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10
+    gap: 0,
+  },
+  imageWrapper: {
+    width: '50%',  // 레이아웃은 50:50 유지
+    padding: 5,
+    height: 200,   // 이미지 컨테이너 높이 고정
+    display: 'flex',
+    alignItems: 'center',  // 이미지 가운데 정렬
+    justifyContent: 'center',
   },
   image: {
-    width: 150,
-    height: 150,
-    objectFit: 'contain'
+    maxWidth: '100%',
+    maxHeight: '100%',
+    objectFit: 'contain',  // 'cover' 대신 'contain' 사용하여 비율 유지
+  },
+  imageCaption: {
+    fontSize: 10,
+    textAlign: 'center',
+    marginTop: 4,
+    color: '#666',
   },
   signature: {
     width: 150,
@@ -416,6 +431,27 @@ const styles = StyleSheet.create({
   },
 });
 
+// 이미지 섹션 추가
+const ImagesSection = ({ images }) => {
+  if (!images || images.length === 0) return null;
+
+  return (
+    <View style={styles.section} break>
+      <Text style={styles.title}>현장 사진</Text>
+      <View style={styles.imagesContainer}>
+        {images.map((image, index) => (
+          <View key={index} style={styles.imageWrapper}>
+            <Image
+              src={`http://localhost:8080/uploads/images/${image}`}
+              style={styles.image}
+            />
+            <Text style={styles.imageCaption}>현장사진 {index + 1}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+};
 
 // PDF 문서 컴포넌트
 const InspectionPDF = ({ data, checklistLabels, getStatusText }) => (
@@ -443,8 +479,8 @@ const InspectionPDF = ({ data, checklistLabels, getStatusText }) => (
           <View style={styles.approvalRow}>
             <Text style={[styles.approvalCell, styles.noBorderBottom]}>결</Text>
             <Text style={styles.approvalCell}>담당</Text>
-            <Text style={styles.approvalCell}>행정실장</Text>
-            <Text style={styles.approvalCell}>교장</Text>
+            <Text style={styles.approvalCell}></Text>
+            <Text style={styles.approvalCell}></Text>
           </View>
           {/* 두 번째 행 (결재) - 구분선 없음 */}
           <View style={styles.approvalRow}>
@@ -643,12 +679,12 @@ const InspectionPDF = ({ data, checklistLabels, getStatusText }) => (
       <View style={styles.footer}>
         {/* 왼쪽 - 로고 & 회사 정보 */}
         <View style={styles.logoContainer}>
-          <Image src="/images/dawoo2.png" style={styles.logo} />
+          <Image src="/images/sobang.png" style={styles.logo} />
           <View style={styles.companyInfo}>
-            <Text>(주) 다우</Text>
-            <Text>대전광역시 서구 계룡로 553번안길 63</Text>
-            <Text>TEL: 042)526-4805</Text>
-            <Text>FAX: 042)526-4806</Text>
+            <Text>(주) 강동소방</Text>
+            <Text>대전 서구 대덕대로 141 (갈마동) 2층, 201호(수정빌딩)</Text>
+            <Text>TEL: 0507-1343-1190</Text>
+            <Text>FAX: 0507-1343-1190</Text>
           </View>
         </View>
 
@@ -670,20 +706,7 @@ const InspectionPDF = ({ data, checklistLabels, getStatusText }) => (
         </View>
       </View>
       {/* 이미지 섹션 */}
-      {/* {data.images && data.images.length > 0 && (
-        <View style={styles.imageSection}>
-          <Text style={styles.title}>5. 첨부 이미지</Text>
-          <View style={styles.imageGrid}>
-            {data.images.map((image, index) => (
-              <Image
-                key={index}
-                src={`http://localhost:8080/uploads/images/${image}`}
-                style={styles.image}
-              />
-            ))}
-          </View>
-        </View>
-      )} */}
+      <ImagesSection images={data.images} />
     </Page>
   </Document>
 );

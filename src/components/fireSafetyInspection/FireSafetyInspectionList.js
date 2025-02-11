@@ -13,10 +13,8 @@ import {
   Typography,
   Pagination,
   Stack,
-  Button
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import AddIcon from '@mui/icons-material/Add';
 import { useNavigate } from 'react-router-dom';
 
 const FireSafetyInspectionList = () => {
@@ -31,7 +29,7 @@ const FireSafetyInspectionList = () => {
   useEffect(() => {
     const fetchUserAndInspections = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         const userResponse = await fetch('http://localhost:8080/api/auth/me', {
           headers: {
             'Authorization': `Bearer ${token}`

@@ -47,6 +47,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     borderRight: '1pt solid #1C243A',
     fontSize: 10,
+    fontWeight: 'bold',
   },
   headerValue: {
     width: '25%',
@@ -136,7 +137,42 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#1C243A',
   },
+  imagesContainer: {
+    marginTop: 10,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 0,
+  },
+  imageWrapper: {
+    width: '50%',  // 레이아웃은 50:50 유지
+    padding: 5,
+    height: 200,   // 이미지 컨테이너 높이 고정
+    display: 'flex',
+    alignItems: 'center',  // 이미지 가운데 정렬
+    justifyContent: 'center',
+  },
+  image: {
+    maxWidth: '100%',
+    maxHeight: '100%',
+    objectFit: 'contain',  // 'cover' 대신 'contain' 사용하여 비율 유지
+  },
+  imageCaption: {
+    fontSize: 10,
+    textAlign: 'center',
+    marginTop: 4,
+    color: '#666',
+  },
+  sectionTitle: {
+    fontSize: 10,
+    backgroundColor: '#1C243A',
+    color: 'white',
+    padding: 5,
+    marginBottom: 5,
+    fontFamily: 'Pretendard',
+    fontWeight: 'bold', 
+  },
 });
+
 
 const FireSafetyInspectionPDF = ({ inspection }) => {
   const formatDate = (dateString) => {
@@ -246,8 +282,33 @@ const FireSafetyInspectionPDF = ({ inspection }) => {
         <View style={styles.footer}>
           <Text>소방시설 점검업체: {inspection.companyName}</Text>
         </View>
+
+        {/* 이미지 섹션 */}
+        <ImagesSection attachments={inspection.attachments} />
       </Page>
     </Document>
+  );
+};
+
+// 이미지 섹션 컴포넌트 수정
+const ImagesSection = ({ attachments }) => {
+  if (!attachments || attachments.length === 0) return null;
+
+  return (
+    <View style={styles.section} break>
+      <Text style={styles.sectionTitle}>현장 사진</Text>
+      <View style={styles.imagesContainer}>
+        {attachments.map((image, index) => (
+          <View key={index} style={styles.imageWrapper}>
+            <Image
+              src={`http://localhost:8080/uploads/fire-safety-images/${image}`}
+              style={styles.image}
+            />
+            <Text style={styles.imageCaption}>현장사진 {index + 1}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
   );
 };
 

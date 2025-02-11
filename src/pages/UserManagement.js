@@ -43,14 +43,14 @@ const UserManagement = () => {
   });
 
   // ADMIN 권한 체크
-  const isAdmin = localStorage.getItem('role')?.toUpperCase() === 'ADMIN';
+  const isAdmin = sessionStorage.getItem('role')?.toUpperCase() === 'ADMIN';
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const response = await fetch(`http://localhost:8080/api/users/${userId}`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${sessionStorage.getItem('token')}`
           }
         });
         if (response.ok) {
@@ -66,7 +66,7 @@ const UserManagement = () => {
       try {
         const response = await fetch('http://localhost:8080/api/companies', {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${sessionStorage.getItem('token')}`
           }
         });
         if (response.ok) {
@@ -108,7 +108,7 @@ const UserManagement = () => {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${sessionStorage.getItem('token')}`
           },
           body: JSON.stringify({
             currentPassword: passwordData.currentPassword,
@@ -142,7 +142,7 @@ const UserManagement = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
         },
         body: JSON.stringify(updateData)
       });
@@ -181,7 +181,7 @@ const UserManagement = () => {
         const response = await fetch(`http://localhost:8080/api/users/${userId}`, {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${sessionStorage.getItem('token')}`
           }
         });
 

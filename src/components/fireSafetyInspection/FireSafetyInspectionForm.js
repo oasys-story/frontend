@@ -8,9 +8,6 @@ import {
   Step,
   StepLabel,
   FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Grid,
   Paper,
   Container,
@@ -21,6 +18,8 @@ import {
   DialogActions,
   DialogContentText,
   Snackbar,
+  InputAdornment,
+  Autocomplete,
 } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
@@ -29,6 +28,7 @@ import SignatureDialog from '../inspection/SignatureDialog';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import VoiceRecorder from '../inspection/VoiceRecorder';
 import DeleteIcon from '@mui/icons-material/Delete';
+import SearchIcon from '@mui/icons-material/Search';
 
 const FireSafetyInspectionForm = () => {
   const { id } = useParams();  // URL에서 id 파라미터 가져오기
@@ -74,6 +74,14 @@ const FireSafetyInspectionForm = () => {
     attachments: []
   });
 
+  // 검색어 상태 추가
+  const [searchKeyword, setSearchKeyword] = useState('');
+
+  // 필터링된 업체 목록 계산
+  const filteredCompanies = companies.filter(company => 
+    company.companyName.toLowerCase().includes(searchKeyword.toLowerCase())
+  );
+
   useEffect(() => {
     // id가 있으면 수정 모드로 데이터 불러오기
     if (id) {
@@ -84,7 +92,7 @@ const FireSafetyInspectionForm = () => {
 
   const fetchInspectionData = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const response = await fetch(`http://localhost:8080/api/fire-inspections/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -115,7 +123,7 @@ const FireSafetyInspectionForm = () => {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         
         // 현재 로그인한 사용자 정보 가져오기
         const userResponse = await fetch('http://localhost:8080/api/auth/me', {
@@ -141,7 +149,11 @@ const FireSafetyInspectionForm = () => {
         
         if (companiesResponse.ok) {
           const companiesData = await companiesResponse.json();
-          setCompanies(companiesData);
+          // 회사명 기준으로 오름차순 정렬
+          const sortedCompanies = companiesData.sort((a, b) => 
+            a.companyName.localeCompare(b.companyName, 'ko')  // 한글 정렬
+          );
+          setCompanies(sortedCompanies);
         }
       } catch (error) {
         console.error('초기 데이터 로딩 실패:', error);
@@ -250,7 +262,7 @@ const FireSafetyInspectionForm = () => {
     setSignatureDialogOpen(false);
     
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const formDataToSubmit = new FormData();
       
       // 기존 이미지 경로와 새 이미지 파일을 분리하여 처리
@@ -400,24 +412,47 @@ const FireSafetyInspectionForm = () => {
             </LocalizationProvider>
 
             <FormControl fullWidth sx={{ mb: 2, mt: 2 }}>
-              <InputLabel>업체 선택</InputLabel>
-              <Select
-                value={formData.companyId}
-                onChange={(e) => {
-                  setFormData({...formData, companyId: e.target.value});
-                  setFormErrors(prev => ({...prev, companyName: false}));
+              <Autocomplete
+                value={companies.find(company => company.companyId === formData.companyId) || null}
+                onChange={(event, newValue) => {
+                  setFormData({
+                    ...formData,
+                    companyId: newValue ? newValue.companyId : '',
+                    buildingName: newValue ? newValue.companyName : ''
+                  });
+                  setFormErrors(prev => ({
+                    ...prev, 
+                    companyName: false,
+                    buildingName: false
+                  }));
                 }}
-                label="업체 선택"
-                error={formErrors.companyName}
-                helperText={formErrors.companyName ? "점검업체를 입력해주세요" : ""}
-                required
-              >
-                {companies.map((company) => (
-                  <MenuItem key={company.companyId} value={company.companyId}>
-                    {company.companyName}
-                  </MenuItem>
-                ))}
-              </Select>
+                options={companies}
+                getOptionLabel={(option) => option.companyName}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="업체 선택"
+                    error={formErrors.companyName}
+                    required
+                    InputProps={{
+                      ...params.InputProps,
+                      startAdornment: (
+                        <>
+                          <InputAdornment position="start">
+                            <SearchIcon />
+                          </InputAdornment>
+                          {params.InputProps.startAdornment}
+                        </>
+                      )
+                    }}
+                  />
+                )}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    padding: '3px'
+                  }
+                }}
+              />
             </FormControl>
 
             <TextField

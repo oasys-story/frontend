@@ -19,16 +19,12 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
-  Select,
-  MenuItem,
   FormControl,
-  InputLabel,
   ImageList,
   ImageListItem,
-  FormHelperText,
   Alert,
   Snackbar,
-  Grid
+  Autocomplete
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -40,6 +36,7 @@ import { useNavigate } from 'react-router-dom';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VoiceRecorder from './VoiceRecorder';
+import SearchIcon from '@mui/icons-material/Search';
 
 const steps = ['기본 정보', '기본사항', '고압설비', '저압설비', '측정개소', '특이사항'];
 
@@ -143,7 +140,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
       // 수정 모드가 아닐 때만 실행
       if (!isEdit) {
         try {
-          const token = localStorage.getItem('token');
+          const token = sessionStorage.getItem('token');
           const response = await fetch('http://localhost:8080/api/auth/me', {
             headers: {
               'Authorization': `Bearer ${token}`
@@ -246,12 +243,17 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/companies');
-        if (response.ok) {
-          const data = await response.json();
-          // 회사명 기준으로 가나다순 정렬
-          const sortedCompanies = data.sort((a, b) => 
-            a.companyName.localeCompare(b.companyName, 'ko')
+        const token = sessionStorage.getItem('token');
+        const companiesResponse = await fetch('http://localhost:8080/api/companies', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (companiesResponse.ok) {
+          const companiesData = await companiesResponse.json();
+          // 회사명 기준으로 오름차순 정렬
+          const sortedCompanies = companiesData.sort((a, b) => 
+            a.companyName.localeCompare(b.companyName, 'ko')  // 한글 정렬
           );
           setCompanies(sortedCompanies);
         }
@@ -361,7 +363,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
       const response = await fetch(url, {
         method: isEdit ? 'PUT' : 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
         },
         body: formDataObj
       });
@@ -557,30 +559,43 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
                 />
               </LocalizationProvider>
 
-              <FormControl 
-                fullWidth 
-                sx={{ mb: 2, mt: 4 }}
-                error={formErrors.companyId}
-                required
-              >
-                <InputLabel>업체 선택</InputLabel>
-                <Select
-                  value={formData.companyId}
-                  onChange={(e) => {
-                    handleCompanySelect(e);
-                    setFormErrors({...formErrors, companyId: false});
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <Autocomplete
+                  value={companies.find(company => company.companyId === formData.companyId) || null}
+                  onChange={(event, newValue) => {
+                    setFormData({
+                      ...formData,
+                      companyId: newValue ? newValue.companyId : ''
+                    });
+                    setFormErrors(prev => ({...prev, companyId: false}));
                   }}
-                  label="업체 선택"
-                >
-                  {companies.map((company) => (
-                    <MenuItem key={company.companyId} value={company.companyId}>
-                      {company.companyName}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {formErrors.companyId && (
-                  <FormHelperText>업체를 선택해주세요</FormHelperText>
-                )}
+                  options={companies}
+                  getOptionLabel={(option) => option.companyName}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="업체 선택"
+                      error={formErrors.companyId}
+                      required
+                      InputProps={{
+                        ...params.InputProps,
+                        startAdornment: (
+                          <>
+                            <InputAdornment position="start">
+                              <SearchIcon />
+                            </InputAdornment>
+                            {params.InputProps.startAdornment}
+                          </>
+                        )
+                      }}
+                    />
+                  )}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      padding: '3px'
+                    }
+                  }}
+                />
               </FormControl>
 
               <TextField

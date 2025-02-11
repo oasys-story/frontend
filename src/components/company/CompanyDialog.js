@@ -18,7 +18,6 @@ import {
   RadioGroup,
   Radio,
   FormLabel,
-  Checkbox,
   Typography,
   Chip,
 } from '@mui/material';

@@ -28,7 +28,7 @@ const CompanyManagement = () => {
       try {
         const response = await fetch(`http://localhost:8080/api/companies/${companyId}`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${sessionStorage.getItem('token')}`
           }
         });
         if (response.ok) {
@@ -52,7 +52,7 @@ const CompanyManagement = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
         },
         body: JSON.stringify(company)
       });
@@ -69,7 +69,7 @@ const CompanyManagement = () => {
   };
 
   // ADMIN 권한 체크
-  const isAdmin = localStorage.getItem('role')?.toUpperCase() === 'ADMIN';
+  const isAdmin = sessionStorage.getItem('role')?.toUpperCase() === 'ADMIN';
 
   // 업체 삭제 핸들러
   const handleDelete = async () => {
@@ -83,7 +83,7 @@ const CompanyManagement = () => {
         const response = await fetch(`http://localhost:8080/api/companies/${companyId}`, {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${sessionStorage.getItem('token')}`
           }
         });
 

@@ -53,10 +53,10 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
     contactNumber: '',
     images: []
   });
-  const currentUserId = parseInt(localStorage.getItem('userId'));
+  const currentUserId = parseInt(sessionStorage.getItem('userId'));
   const isAuthor = inquiry?.writerId === currentUserId;
-  const isAdminOrManager = localStorage.getItem('role')?.toUpperCase() === 'ADMIN' || 
-                        localStorage.getItem('role')?.toUpperCase() === 'MANAGER';
+  const isAdminOrManager = sessionStorage.getItem('role')?.toUpperCase() === 'ADMIN' || 
+                        sessionStorage.getItem('role')?.toUpperCase() === 'MANAGER';
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -174,7 +174,7 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
       const response = await fetch(`http://localhost:8080/api/inquiries/${inquiry.inquiryId}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
         },
         body: formData
       });
@@ -207,7 +207,7 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
         const response = await fetch(`http://localhost:8080/api/inquiries/${inquiry.inquiryId}`, {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${sessionStorage.getItem('token')}`
           }
         });
 
@@ -257,7 +257,7 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
       formData.append('inquiryTitle', newInquiry.inquiryTitle);
       formData.append('inquiryContent', newInquiry.inquiryContent);
       formData.append('contactNumber', newInquiry.contactNumber);
-      formData.append('userId', localStorage.getItem('userId'));
+      formData.append('userId', sessionStorage.getItem('userId'));
 
       newInquiry.images.forEach(image => {
         formData.append('images', image);
@@ -266,7 +266,7 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
       const response = await fetch('http://localhost:8080/api/inquiries', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
         },
         body: formData
       });

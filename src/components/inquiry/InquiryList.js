@@ -90,9 +90,9 @@ const InquiryList = () => {
 
   const fetchInquiries = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/inquiries', {
+      const response = await fetch('https://safe.jebee.net/api/inquiries', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
         }
       });
       if (response.ok) {
@@ -136,7 +136,7 @@ const InquiryList = () => {
   };
 
   const handleAddInquiryClick = () => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (!token) {
       setSnackbar({
         open: true,

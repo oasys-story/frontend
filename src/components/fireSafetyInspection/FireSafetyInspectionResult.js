@@ -31,30 +31,37 @@ const FireSafetyInspectionResult = () => {
   const [smsDialogOpen, setSmsDialogOpen] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [sending, setSending] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   useEffect(() => {
-    fetchInspectionData();
-    checkPermission();
+    const initialize = async () => {
+      await fetchInspectionData();
+      await checkPermission();
+    };
+    initialize();
   }, [id]);
 
   const checkPermission = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const response = await fetch('http://localhost:8080/api/auth/me', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
         const userData = await response.json();
-        setHasPermission(userData.role === 'USER');
+        setCurrentUserId(userData.userId);
+        setIsAdmin(userData.role === 'ADMIN');
       }
     } catch (error) {
       console.error('권한 체크 실패:', error);
+      setHasPermission(false);
     }
   };
 
   const fetchInspectionData = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const response = await fetch(`http://localhost:8080/api/fire-inspections/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -67,6 +74,11 @@ const FireSafetyInspectionResult = () => {
         if (data.phoneNumber) {
           setPhoneNumber(data.phoneNumber);
         }
+        
+        const currentUser = await getCurrentUser();
+        const hasPermission = currentUser.role === 'ADMIN' || 
+                            data.writerId === currentUser.userId;
+        setHasPermission(hasPermission);
       } else {
         console.error('데이터 로딩 실패');
       }
@@ -77,10 +89,21 @@ const FireSafetyInspectionResult = () => {
     }
   };
 
+  const getCurrentUser = async () => {
+    const token = sessionStorage.getItem('token');
+    const response = await fetch('http://localhost:8080/api/auth/me', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (response.ok) {
+      return await response.json();
+    }
+    throw new Error('Failed to get current user');
+  };
+
   const handleDelete = async () => {
     if (window.confirm('정말 삭제하시겠습니까?')) {
       try {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         const response = await fetch(`http://localhost:8080/api/fire-inspections/${id}`, {
           method: 'DELETE',
           headers: {
@@ -104,7 +127,7 @@ const FireSafetyInspectionResult = () => {
 
   const handleSignatureComplete = async (signatureData) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const response = await fetch(`http://localhost:8080/api/fire-inspections/${id}/manager-signature`, {
         method: 'POST',
         headers: {
@@ -135,7 +158,7 @@ const FireSafetyInspectionResult = () => {
 
     try {
       setSending(true);
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const response = await fetch(`http://localhost:8080/api/kakao-alert/fire-safety-inspection/${id}`, {
         method: 'POST',
         headers: {
@@ -309,7 +332,7 @@ const FireSafetyInspectionResult = () => {
               ) : (
                 <Box
                   onClick={() => 
-                    localStorage.getItem('role') === 'USER'
+                    sessionStorage.getItem('role') === 'USER'
                       ? setSignatureDialogOpen(true) 
                       : alert('점검대상업체만 서명할 수 있습니다.')
                   }
@@ -322,15 +345,15 @@ const FireSafetyInspectionResult = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    cursor: localStorage.getItem('role') === 'USER' ? 'pointer' : 'not-allowed',
-                    opacity: localStorage.getItem('role') === 'USER' ? 1 : 0.6,
+                    cursor: sessionStorage.getItem('role') === 'USER' ? 'pointer' : 'not-allowed',
+                    opacity: sessionStorage.getItem('role') === 'USER' ? 1 : 0.6,
                     '&:hover': {
-                      bgcolor: localStorage.getItem('role') === 'USER' ? 'rgba(28, 36, 58, 0.04)' : undefined
+                      bgcolor: sessionStorage.getItem('role') === 'USER' ? 'rgba(28, 36, 58, 0.04)' : undefined
                     }
                   }}
                 >
                   <Typography color="primary">
-                    {localStorage.getItem('role') === 'USER' ? '서명하기' : '점검대상업체 전용'}
+                    {sessionStorage.getItem('role') === 'USER' ? '서명하기' : '점검대상업체 전용'}
                   </Typography>
                 </Box>
               )}
