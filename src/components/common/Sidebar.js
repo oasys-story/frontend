@@ -568,6 +568,7 @@ const Sidebar = () => {
               </Box>
             </Box>
           ) : (
+
             <Box
               sx={{
                 p: 2,
@@ -579,13 +580,49 @@ const Sidebar = () => {
               <Typography variant="subtitle1" sx={{ color: '#2A2A2A', mb: 1 }}>
                 사이트 이용을 위해 로그인 해주세요.
               </Typography>
-              <Button
-                variant="outlined"
-                onClick={() => setLoginDialogOpen(true)}
-                sx={{ textTransform: 'none', mb: 1 }}
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 1,
+                  alignItems: 'center',
+                }}
               >
-                로그인
-              </Button>
+                <TextField
+                  label="아이디"
+                  variant="outlined"
+                  size="small"
+                  value={loginData.username}
+                  onChange={(e) =>
+                    setLoginData({ ...loginData, username: e.target.value })
+                  }
+                  error={Boolean(errorMessage.username)}
+                  helperText={errorMessage.username}
+                  sx={{ width: '90%' }}
+                />
+                <TextField
+                  label="비밀번호"
+                  variant="outlined"
+                  type="password"
+                  size="small"
+                  value={loginData.password}
+                  onChange={(e) =>
+                    setLoginData({ ...loginData, password: e.target.value })
+                  }
+                  error={Boolean(errorMessage.password)}
+                  helperText={errorMessage.password}
+                  sx={{ width: '90%' }}
+                />
+                <Button
+                  variant="contained"
+                  onClick={handleLogin}
+                  sx={{ textTransform: 'none', mt: 1, width: '90%' }}
+                >
+                  로그인
+                </Button>
+              </Box>
+
+
               <Typography variant="body2" sx={{ mt: 1 }}>
                 <Button
                   onClick={() => {

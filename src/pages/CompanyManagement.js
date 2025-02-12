@@ -7,9 +7,17 @@ import {
   Button,
   FormControlLabel,
   Switch,
-  Stack
+  Stack,
+  InputAdornment,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
 const CompanyManagement = () => {
   const { companyId } = useParams();
@@ -20,7 +28,14 @@ const CompanyManagement = () => {
     phoneNumber: '',
     faxNumber: '',
     notes: '',
-    active: true
+    businessNumber: '',
+    contractDate: null,
+    startDate: null,
+    expiryDate: null,
+    monthlyFee: '',
+    status: 'ACTIVE',
+    address: '',
+    detailAddress: ''
   });
 
   useEffect(() => {
@@ -48,16 +63,38 @@ const CompanyManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const formattedData = {
+        ...company,
+        contractDate: company.contractDate instanceof Date 
+          ? company.contractDate.toISOString().split('T')[0] 
+          : company.contractDate,
+        startDate: company.startDate instanceof Date 
+          ? company.startDate.toISOString().split('T')[0] 
+          : company.startDate,
+        expiryDate: company.expiryDate instanceof Date 
+          ? company.expiryDate.toISOString().split('T')[0] 
+          : company.expiryDate,
+        terminationDate: company.terminationDate instanceof Date 
+          ? company.terminationDate.toISOString().split('T')[0] 
+          : company.terminationDate,
+        monthlyFee: company.monthlyFee ? parseFloat(company.monthlyFee) : null,
+        status: company.status
+      };
+
+      const formData = new FormData();
+      formData.append('company', JSON.stringify(formattedData));
+
       const response = await fetch(`http://localhost:8080/api/companies/${companyId}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${sessionStorage.getItem('token')}`
         },
-        body: JSON.stringify(company)
+        body: formData
       });
 
       if (response.ok) {
+        const updatedCompany = await response.json();
+        setCompany(updatedCompany);
         alert('업체 정보가 수정되었습니다.');
       } else {
         alert('업체 정보 수정에 실패했습니다.');
@@ -100,6 +137,21 @@ const CompanyManagement = () => {
     }
   };
 
+  // 주소 검색 핸들러 추가
+  const handleAddressSearch = () => {
+    new window.daum.Postcode({
+      oncomplete: (data) => {
+        // 도로명 주소 또는 지번 주소
+        const address = data.roadAddress || data.jibunAddress;
+        
+        setCompany(prev => ({
+          ...prev,
+          address: address,
+        }));
+      }
+    }).open();
+  };
+
   return (
     <Box sx={{ p: 2, maxWidth: '430px', margin: '0 auto' }}>
       {/* 헤더 */}
@@ -136,33 +188,105 @@ const CompanyManagement = () => {
             />
 
             <TextField
-              label="팩스번호"
-              value={company.faxNumber || ''}
-              onChange={(e) => setCompany({ ...company, faxNumber: e.target.value })}
+              label="사업자 번호"
+              value={company.businessNumber || ''}
+              onChange={(e) => setCompany({ ...company, businessNumber: e.target.value })}
               fullWidth
               size="small"
             />
+
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <DatePicker
+                label="계약일자"
+                value={company.contractDate ? new Date(company.contractDate) : null}
+                onChange={(date) => setCompany({ ...company, contractDate: date })}
+                renderInput={(params) => <TextField {...params} fullWidth size="small" />}
+              />
+
+              <DatePicker
+                label="시작일자"
+                value={company.startDate ? new Date(company.startDate) : null}
+                onChange={(date) => setCompany({ ...company, startDate: date })}
+                renderInput={(params) => <TextField {...params} fullWidth size="small" />}
+              />
+
+              <DatePicker
+                label="만기일자"
+                value={company.expiryDate ? new Date(company.expiryDate) : null}
+                onChange={(date) => setCompany({ ...company, expiryDate: date })}
+                renderInput={(params) => <TextField {...params} fullWidth size="small" />}
+              />
+            </LocalizationProvider>
 
             <TextField
-              label="비고"
-              value={company.notes || ''}
-              onChange={(e) => setCompany({ ...company, notes: e.target.value })}
+              label="월 비용"
+              value={company.monthlyFee || ''}
+              onChange={(e) => setCompany({ ...company, monthlyFee: e.target.value })}
               fullWidth
               size="small"
-              multiline
-              rows={3}
+              InputProps={{
+                startAdornment: <InputAdornment position="start">₩</InputAdornment>,
+              }}
             />
 
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={company.active}
-                  onChange={(e) => setCompany({ ...company, active: e.target.checked })}
-                  color={company.active ? "success" : "default"}
+            <FormControl fullWidth size="small">
+              <InputLabel>상태</InputLabel>
+              <Select
+                name="status"
+                value={company.status}
+                onChange={(e) => setCompany({ ...company, status: e.target.value })}
+                label="상태"
+              >
+                <MenuItem value="ACTIVE">사용</MenuItem>
+                <MenuItem value="TERMINATED">해지</MenuItem>
+              </Select>
+            </FormControl>
+
+            {company.status === 'TERMINATED' && (
+              <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <DatePicker
+                  label="해지일자"
+                  value={company.terminationDate ? new Date(company.terminationDate) : null}
+                  onChange={(date) => setCompany({ ...company, terminationDate: date })}
+                  renderInput={(params) => <TextField {...params} fullWidth size="small" />}
                 />
-              }
-              label={company.active ? "사용" : "미사용"}
-            />
+              </LocalizationProvider>
+            )}
+
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <TextField
+                label="주소"
+                value={company.address || ''}
+                fullWidth
+                size="small"
+                InputProps={{
+                  readOnly: true,
+                }}
+              />
+              <Button
+                variant="outlined"
+                onClick={handleAddressSearch}
+                sx={{ 
+                  minWidth: 'auto',
+                  color: '#1C243A',
+                  borderColor: '#1C243A',
+                  '&:hover': {
+                    borderColor: '#3d63b8',
+                    color: '#3d63b8'
+                  }
+                }}
+              >
+                검색
+              </Button>
+            </Box>
+
+            {/* <TextField
+              label="상세주소"
+              value={company.detailAddress || ''}
+              onChange={(e) => setCompany({ ...company, detailAddress: e.target.value })}
+              fullWidth
+              size="small"
+            /> */}
 
             {/* 버튼 그룹 */}
             <Box sx={{ 

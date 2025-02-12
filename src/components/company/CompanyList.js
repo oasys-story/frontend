@@ -34,9 +34,14 @@ const CompanyList = () => {
   }, []);
 
   useEffect(() => {
-    const filtered = companies.filter(company =>
-      company.companyName.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filtered = companies.filter(company => {
+      const searchTermLower = searchTerm.toLowerCase();
+      return (
+        (company.companyName && company.companyName.toLowerCase().includes(searchTermLower)) ||
+        (company.address && company.address.toLowerCase().includes(searchTermLower)) ||
+        (company.phoneNumber && company.phoneNumber.includes(searchTerm))
+      );
+    });
     setFilteredCompanies(filtered);
     setPage(1); // 검색 시 첫 페이지로 이동
   }, [searchTerm, companies]);
@@ -70,26 +75,9 @@ const CompanyList = () => {
     setPage(value);
   };
 
-  const handleAddCompany = async (companyData) => {
-    try {
-      const response = await fetch('http://localhost:8080/api/companies', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(companyData),
-      });
-
-      if (response.ok) {
-        fetchCompanies(); // 목록 새로고침
-        setDialogOpen(false);
-      } else {
-        throw new Error('업체 추가에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('업체 추가 실패:', error);
-      alert(error.message);
-    }
+  const handleSubmit = async (companyData) => {
+    // 저장 성공 후 목록 새로고침
+    fetchCompanies(); // 회사 목록을 다시 불러오는 함수
   };
 
   const handleCompanyClick = (companyId) => {
@@ -203,15 +191,15 @@ const CompanyList = () => {
                     <Typography
                       sx={{
                         fontSize: '0.75rem',
-                        color: company.active ? 'success.main' : 'error.main',
-                        bgcolor: company.active ? 'success.lighter' : 'error.lighter',
+                        color: company.status === 'ACTIVE' ? 'success.main' : 'error.main',
+                        bgcolor: company.status === 'ACTIVE' ? 'success.lighter' : 'error.lighter',
                         py: 0.5,
                         px: 1,
                         borderRadius: 1,
                         display: 'inline-block'
                       }}
                     >
-                      {company.active ? '사용' : '미사용'}
+                      {company.status === 'ACTIVE' ? '사용' : '해지'}
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -253,7 +241,7 @@ const CompanyList = () => {
       <CompanyDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
-        onSubmit={handleAddCompany}
+        onSubmit={handleSubmit}
       />
     </Box>
   );

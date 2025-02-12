@@ -78,6 +78,22 @@ const HIGH_VOLTAGE_ITEMS = [
   { id: 'groundingSystem', label: '접지 설비' }
 ];
 
+const textFieldStyle = {
+  flex: 1,
+  '& .MuiInputBase-input': {
+    fontSize: '1.4rem',
+    padding: '12px 14px',
+  },
+  '& .MuiInputAdornment-root': {
+    '& .MuiTypography-root': {
+      fontSize: '1.3rem',
+    }
+  },
+  '& .MuiInputLabel-root': {
+    fontSize: '1.3rem',
+  }
+};
+
 /* 점검 폼 컴포넌트 */
 const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = null }) => {
   const navigate = useNavigate();
@@ -623,7 +639,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
               
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                 <TextField
-                  sx={{ flex: 1 }}
+                  sx={textFieldStyle}
                   label="수전전압"
                   type="number"
                   margin="normal"
@@ -652,7 +668,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
                   }}
                 />
                 <TextField
-                  sx={{ flex: 1 }}
+                  sx={textFieldStyle}
                   label="수전용량"
                   type="number"
                   margin="normal"
@@ -684,7 +700,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
 
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                 <TextField
-                  sx={{ flex: 1 }}
+                  sx={textFieldStyle}
                   label="발전전압"
                   type="number"
                   margin="normal"
@@ -713,7 +729,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
                   }}
                 />
                 <TextField
-                  sx={{ flex: 1 }}
+                  sx={textFieldStyle}
                   label="발전용량"
                   type="number"
                   margin="normal"
@@ -744,6 +760,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
               </Box>
 
               <TextField
+                sx={textFieldStyle}
                 fullWidth
                 label="태양광"
                 type="number"
@@ -774,6 +791,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
               />
 
               <TextField
+                sx={textFieldStyle}
                 fullWidth
                 label="계약용량"
                 type="number"
@@ -804,6 +822,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
               />
               
               <TextField
+                sx={textFieldStyle}
                 fullWidth
                 label="점검종별"
                 margin="normal"
@@ -827,35 +846,36 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
                 }}
               />
               <TextField
-                  fullWidth
-                  label="점검횟수"
-                  type="number"
-                  margin="normal"
-                  value={formData.inspectionCount}
-                  onChange={(e) => {
-                    if (e.target.value.length <= 5) {
-                      setFormData({ ...formData, inspectionCount: e.target.value });
-                    }
-                  }}
-                  InputProps={{
-                    endAdornment: (
-                      <>
-                        <InputAdornment position="end">회</InputAdornment>
-                        <VoiceRecorder 
-                          label="점검횟수"
-                          onTranscriptionComplete={(text) => {
-                            const number = text.replace(/[^0-9]/g, '').slice(0, 5);
-                            setFormData(prev => ({
-                              ...prev,
-                              inspectionCount: number
-                            }));
-                          }}
-                        />
-                      </>
-                    ),
-                  }}
-                />
-              </Box>
+                sx={textFieldStyle}
+                fullWidth
+                label="점검횟수"
+                type="number"
+                margin="normal"
+                value={formData.inspectionCount}
+                onChange={(e) => {
+                  if (e.target.value.length <= 5) {
+                    setFormData({ ...formData, inspectionCount: e.target.value });
+                  }
+                }}
+                InputProps={{
+                  endAdornment: (
+                    <>
+                      <InputAdornment position="end">회</InputAdornment>
+                      <VoiceRecorder 
+                        label="점검횟수"
+                        onTranscriptionComplete={(text) => {
+                          const number = text.replace(/[^0-9]/g, '').slice(0, 5);
+                          setFormData(prev => ({
+                            ...prev,
+                            inspectionCount: number
+                          }));
+                        }}
+                      />
+                    </>
+                  ),
+                }}
+              />
+            </Box>
           )}
 
           {/* 고압설비 */}
@@ -877,19 +897,19 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
                     '& .MuiFormControlLabel-root': {
                       margin: 0,
                       minWidth: 'auto',
-                      flex: 1
+                      flex: 1,
                     },
                     '& .MuiFormControlLabel-label': {
-                      fontSize: '0.8rem'
+                      fontSize: '1.3rem'
                     },
                     '& .MuiRadio-root': {
-                      padding: '4px'
+                      transform: 'scale(1.3)'
                     }
                   }}
                 >
                   <Typography sx={{ 
                     flexBasis: '35%',
-                    fontSize: '0.9rem',
+                    fontSize: '1.3rem',
                     paddingRight: '8px'
                   }}>
                     {item.label}
@@ -907,16 +927,16 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
                       [item.id]: e.target.value
                     })}
                   >
-                    <FormControlLabel value="O" control={<Radio size="small" />} label="적합" />
-                    <FormControlLabel value="X" control={<Radio size="small" />} label="부적합" />
-                    <FormControlLabel value="/" control={<Radio size="small" />} label="해당없음" />
+                    <FormControlLabel value="O" control={<Radio />} label="적합" />
+                    <FormControlLabel value="X" control={<Radio />} label="부적합" />
+                    <FormControlLabel value="/" control={<Radio />} label="해당없음" />
                   </RadioGroup>
                 </Box>
               ))}
             </Box>
           )}
 
-          {/* 점검내역 */}
+          {/* 점검내역 (저압설비) */}
           {activeStep === 3 && (
             <Box>
               <Typography variant="h6" gutterBottom>
@@ -935,19 +955,19 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
                     '& .MuiFormControlLabel-root': {
                       margin: 0,
                       minWidth: 'auto',
-                      flex: 1
+                      flex: 1,
                     },
                     '& .MuiFormControlLabel-label': {
-                      fontSize: '0.8rem'
+                      fontSize: '1.3rem'  // 라벨 폰트 크기 증가
                     },
                     '& .MuiRadio-root': {
-                      padding: '4px'
+                      transform: 'scale(1.3)'  // 라디오 버튼 크기 증가
                     }
                   }}
                 >
                   <Typography sx={{ 
                     flexBasis: '35%',
-                    fontSize: '0.9rem',
+                    fontSize: '1.3rem',  // 항목명 폰트 크기 증가
                     paddingRight: '8px'
                   }}>
                     {item.label}
@@ -965,9 +985,9 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
                       [item.id]: e.target.value
                     })}
                   >
-                    <FormControlLabel value="O" control={<Radio size="small" />} label="적합" />
-                    <FormControlLabel value="X" control={<Radio size="small" />} label="부적합" />
-                    <FormControlLabel value="/" control={<Radio size="small" />} label="해당없음" />
+                    <FormControlLabel value="O" control={<Radio />} label="적합" />
+                    <FormControlLabel value="X" control={<Radio />} label="부적합" />
+                    <FormControlLabel value="/" control={<Radio />} label="해당없음" />
                   </RadioGroup>
                 </Box>
               ))}
@@ -1023,6 +1043,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
 
                       {/* 전압 입력 */}
                       <TextField
+                        sx={textFieldStyle}
                         label="전압"
                         type="number"
                         size="small"
@@ -1044,6 +1065,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
 
                       {/* 전류 입력 */}
                       <TextField
+                        sx={textFieldStyle}
                         label="전류"
                         type="number"
                         size="small"
@@ -1065,6 +1087,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
 
                       {/* 온도 입력 */}
                       <TextField
+                        sx={textFieldStyle}
                         label="온도"
                         type="number"
                         size="small"
@@ -1108,6 +1131,7 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
                 특이사항
               </Typography>
               <TextField
+                sx={textFieldStyle}
                 fullWidth
                 multiline
                 rows={4}

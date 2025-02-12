@@ -35,12 +35,12 @@ const Home = () => {
     {
       image: "/images/inspection.jpg",
       title: "정밀 안전 점검",
-      description: "현장 점검부터 결과 확인까지, 신뢰할 수 있는 데이터를 제공합니다."
+      description: "현장 점검부터 결과 확인까지 \n 신뢰할 수 있는 데이터를 제공합니다."
     },
     {
       image: "/images/inspection2.jpg",
       title: "즉각적인 결과 피드백",
-      description: "점검 후 바로 안전 결과를 확인하고, 필요한 조치를 취하세요."
+      description: "점검 후 바로 안전 결과를 확인하고 \n 필요한 조치를 취하세요."
     }
     
   ];
@@ -125,7 +125,7 @@ const Home = () => {
         <Toolbar sx={{ justifyContent: 'center', minHeight: '60px' }}>
           <Box
             component="img"
-            src="/images/dawoo.png"
+            src="/images/sobang.png"
             alt="로고"
             sx={{
               height: '50px',
@@ -174,6 +174,7 @@ const Home = () => {
                   backgroundImage: `url(${item.image})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
+                  whiteSpace: 'pre-line',
                   '&::before': {
                     content: '""',
                     position: 'absolute',
@@ -400,39 +401,60 @@ const Home = () => {
 
 
       {/* 회사 정보 (하단 고정 X, 페이지 최하단에만 위치) */}
-      <Box sx={{ textAlign: 'center', mt: 6, mb: 4 }}>
-        <Grid container alignItems="center" justifyContent="center" spacing={1}>
-          <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center' }}>
-            <Box
-              component="img"
-              src="/images/dawoo2.png"
-              alt="회사 로고"
-              sx={{
-                height: '40px',  // 로고 크기 조절
-                width: 'auto',
-              }}
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'gray', fontSize: '0.75rem' }}>
-            (주) 다우
-            </Typography>
-          </Grid>
-          <Grid item xs={12}>
-            <Typography variant="body2" sx={{ color: 'gray', fontSize: '0.7rem' }}>
-            대전광역시 서구 계룡로 553번안길 63
-            </Typography>
-          </Grid>
-          <Grid item xs={12}>
-            <Typography variant="body2" sx={{ color: 'gray', fontSize: '0.7rem' }}>
-            TEL: 042) 526-4805 | FAX: 042) 526-4806
-            </Typography>
-          </Grid>
-        </Grid>
-      </Box>
+      <Box
+      sx={{
+        backgroundColor: '#fff',
+        py: 3,
+        px: 2,
+        textAlign: 'center',
+        borderTop: '1px solid #ddd',
+        mt: 4,
+      }}
+    >
+      {/* 회사 로고 */}
+      <Box
+        component="img"
+        src="/images/sobang.png"
+        alt="회사 로고"
+        sx={{
+          height: 40,
+          display: 'block',
+          margin: '0 auto',
+        }}
+      />
+      
+      {/* 회사 정보 */}
+      <Typography
+        variant="body2"
+        sx={{ fontWeight: 'bold', color: '#333', fontSize: '0.75rem' , mt: 0.5}}
+      >
+        (주) 강동소방
+      </Typography>
+      <Typography variant="body2" sx={{ color: '#666', fontSize: '0.7rem', mt: 0.5 }}>
+      대전 서구 대덕대로 141 (갈마동) 2층, 201호(수정빌딩)
+      </Typography>
+      <Typography variant="body2" sx={{ color: '#666', fontSize: '0.7rem', mt: 0.5 }}>
+      TEL: 0507-1343-1190 | FAX: 0507-1343-1190
+      </Typography>
+
+
+      {/* 사용문의 문구와 링크 */}
+      <Typography variant="body2" sx={{ color: '#666', fontSize: '0.75rem', mt: 1 }}>
+        사용문의{' '}
+        <Link
+          href="http://www.keyless.kr"
+          underline="hover"
+          sx={{ fontWeight: 'bold', color: '#666' }}
+          target="_blank"
+          rel="noopener"
+        >
+          www.keyless.kr
+        </Link>
+      </Typography>
+    </Box>
 
       {/* 챗봇 추가 */}
-      <HomeChatBot />
+      {/* <HomeChatBot /> */}
 
     {/* 모달 */}
       <InquiryDetailModal 

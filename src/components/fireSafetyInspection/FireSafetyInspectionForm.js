@@ -20,6 +20,9 @@ import {
   Snackbar,
   InputAdornment,
   Autocomplete,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
@@ -60,17 +63,14 @@ const FireSafetyInspectionForm = () => {
     inspectionDate: new Date(),
     address: '',
     buildingGrade: '',
-    // 점검 상태 필드
     fireExtinguisherStatus: '',
     fireAlarmStatus: '',
     fireEvacuationStatus: '',
     fireWaterStatus: '',
     fireFightingStatus: '',
     etcComment: '',
-    // 서명 필드
     inspectorSignature: '',
     managerSignature: '',
-    // 첨부파일
     attachments: []
   });
 
@@ -340,6 +340,28 @@ const FireSafetyInspectionForm = () => {
     setActiveStep(index);
   };
 
+  const handleCompanyChange = (event) => {
+    const selectedCompany = companies.find(company => company.companyId === event.target.value);
+    if (selectedCompany) {
+      // 주소와 상세주소를 하나로 합쳐서 저장
+      const fullAddress = selectedCompany.detailAddress 
+        ? `${selectedCompany.address} ${selectedCompany.detailAddress}`
+        : selectedCompany.address;
+
+      setFormData(prev => ({
+        ...prev,
+        companyId: selectedCompany.companyId,
+        buildingName: selectedCompany.companyName,
+        address: fullAddress  // 전체 주소를 하나의 필드에 저장
+      }));
+      setFormErrors(prev => ({
+        ...prev, 
+        buildingName: false,
+        address: false
+      }));
+    }
+  };
+
   return (
     <Container maxWidth="sm" disableGutters>
       {/* 헤더 */}
@@ -411,48 +433,19 @@ const FireSafetyInspectionForm = () => {
               />
             </LocalizationProvider>
 
-            <FormControl fullWidth sx={{ mb: 2, mt: 2 }}>
-              <Autocomplete
-                value={companies.find(company => company.companyId === formData.companyId) || null}
-                onChange={(event, newValue) => {
-                  setFormData({
-                    ...formData,
-                    companyId: newValue ? newValue.companyId : '',
-                    buildingName: newValue ? newValue.companyName : ''
-                  });
-                  setFormErrors(prev => ({
-                    ...prev, 
-                    companyName: false,
-                    buildingName: false
-                  }));
-                }}
-                options={companies}
-                getOptionLabel={(option) => option.companyName}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="업체 선택"
-                    error={formErrors.companyName}
-                    required
-                    InputProps={{
-                      ...params.InputProps,
-                      startAdornment: (
-                        <>
-                          <InputAdornment position="start">
-                            <SearchIcon />
-                          </InputAdornment>
-                          {params.InputProps.startAdornment}
-                        </>
-                      )
-                    }}
-                  />
-                )}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    padding: '3px'
-                  }
-                }}
-              />
+            <FormControl fullWidth margin="normal">
+              <InputLabel>회사 선택</InputLabel>
+              <Select
+                value={formData.companyId || ''}
+                onChange={handleCompanyChange}
+                label="회사 선택"
+              >
+                {companies.map((company) => (
+                  <MenuItem key={company.companyId} value={company.companyId}>
+                    {company.companyName}
+                  </MenuItem>
+                ))}
+              </Select>
             </FormControl>
 
             <TextField
@@ -461,7 +454,7 @@ const FireSafetyInspectionForm = () => {
               margin="normal"
               value={formData.buildingName}
               onChange={(e) => {
-                if (e.target.value.length <= 25) { // 25자 제한
+                if (e.target.value.length <= 25) {
                   setFormData({...formData, buildingName: e.target.value});
                   setFormErrors(prev => ({...prev, buildingName: false}));
                 }
@@ -476,15 +469,9 @@ const FireSafetyInspectionForm = () => {
               label="주소"
               margin="normal"
               value={formData.address}
-              onChange={(e) => {
-                if (e.target.value.length <= 200) { // 200자 제한
-                  setFormData({...formData, address: e.target.value});
-                  setFormErrors(prev => ({...prev, buildingAddress: false}));
-                }
+              InputProps={{
+                readOnly: true,
               }}
-              error={formErrors.buildingAddress}
-              helperText={formErrors.buildingAddress ? "주소를 입력해주세요" : ""}
-              required
             />
 
             <TextField
@@ -493,8 +480,20 @@ const FireSafetyInspectionForm = () => {
               margin="normal"
               value={formData.buildingGrade}
               onChange={(e) => {
-                if (e.target.value.length <= 10) { // 10자 제한
-                  setFormData({...formData, buildingGrade: e.target.value});
+                const value = e.target.value.replace(/[^0-9]/g, ''); // 숫자만 허용
+                if (value.length <= 2) { // 2자리 숫자까지만 허용
+                  setFormData({
+                    ...formData, 
+                    buildingGrade: value // 숫자만 저장
+                  });
+                }
+              }}
+              placeholder="숫자만 입력"
+              InputProps={{
+                endAdornment: <InputAdornment position="end">등급</InputAdornment>,
+                inputProps: { 
+                  maxLength: 2,
+                  style: { textAlign: 'right', paddingRight: '8px' }  // 숫자 우측 정렬
                 }
               }}
             />

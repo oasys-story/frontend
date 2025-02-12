@@ -429,6 +429,15 @@ const styles = StyleSheet.create({
   noBorderBottom: {
     borderBottom: 0, // 하단 구분선 제거
   },
+  pdfFooterText: {
+    position: 'absolute',
+    bottom: 20,
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    fontSize: 10,
+    color: '#000',
+  },
 });
 
 // 이미지 섹션 추가
@@ -683,8 +692,8 @@ const InspectionPDF = ({ data, checklistLabels, getStatusText }) => (
           <View style={styles.companyInfo}>
             <Text>(주) 강동소방</Text>
             <Text>대전 서구 대덕대로 141 (갈마동) 2층, 201호(수정빌딩)</Text>
-            <Text>TEL: 0507-1343-1190</Text>
-            <Text>FAX: 0507-1343-1190</Text>
+            <Text>0507-1343-1190</Text>
+            <Text>0507-1343-1190</Text>
           </View>
         </View>
 
@@ -705,6 +714,9 @@ const InspectionPDF = ({ data, checklistLabels, getStatusText }) => (
           </View>
         </View>
       </View>
+
+      <Text style={styles.pdfFooterText}>문의 www.oasyss.co.kr</Text>
+
       {/* 이미지 섹션 */}
       <ImagesSection images={data.images} />
     </Page>
