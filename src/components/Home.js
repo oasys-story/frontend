@@ -19,6 +19,7 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import NoticeDetailModal from './notice/NoticeDetailModal';
 import InquiryDetailModal from './inquiry/InquiryDetailModal';
 import HomeChatBot from './customer/HomeChatBot';
+import ContactForm from './common/ContactForm';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -125,7 +126,7 @@ const Home = () => {
         <Toolbar sx={{ justifyContent: 'center', minHeight: '60px' }}>
           <Box
             component="img"
-            src="/images/sobang.png"
+            src="/images/dawoo2.png"
             alt="로고"
             sx={{
               height: '50px',
@@ -414,7 +415,7 @@ const Home = () => {
       {/* 회사 로고 */}
       <Box
         component="img"
-        src="/images/sobang.png"
+        src="/images/dawoo.png"
         alt="회사 로고"
         sx={{
           height: 40,
@@ -428,13 +429,13 @@ const Home = () => {
         variant="body2"
         sx={{ fontWeight: 'bold', color: '#333', fontSize: '0.75rem' , mt: 0.5}}
       >
-        (주) 강동소방
+        (주) 다우
       </Typography>
       <Typography variant="body2" sx={{ color: '#666', fontSize: '0.7rem', mt: 0.5 }}>
-      대전 서구 대덕대로 141 (갈마동) 2층, 201호(수정빌딩)
+      대전광역시 서구 계룡로 553번안길 63
       </Typography>
       <Typography variant="body2" sx={{ color: '#666', fontSize: '0.7rem', mt: 0.5 }}>
-      TEL: 0507-1343-1190 | FAX: 0507-1343-1190
+      TEL: 042) 526-4805 | FAX: 042) 526-4806
       </Typography>
 
 
@@ -468,6 +469,9 @@ const Home = () => {
         notice={selectedNotice}
         onClose={handleCloseModal}
       />
+
+      {/* 문의하기 컴포넌트 추가 */}
+      <ContactForm />
     </Box>
   );
 };

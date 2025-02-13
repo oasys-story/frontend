@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -32,6 +32,7 @@ import Paper from '@mui/material/Paper';
 import IconButton from '@mui/material/IconButton';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CloseIcon from '@mui/icons-material/Close';
+import ImageIcon from '@mui/icons-material/Image';
 
 const CompanyDialog = ({ open, onClose, onSubmit }) => {
   const initialState = {
@@ -67,6 +68,7 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
     monthlyFee: '',
     status: 'ACTIVE',
     terminationDate: null,
+    businessLicenseImage: null,
   };
 
   const structureOptions = ["콘크리트 구조", "철골구조", "조적조", "목구조", "기타"];
@@ -91,6 +93,8 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
   });
 
   const steps = ['건물 정보', '계약 정보', '이미지 등록'];
+
+  const fileInputRef = useRef(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -142,10 +146,31 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
     }));
   };
 
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      // 파일 크기 체크 (10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        alert('파일 크기는 10MB 이하여야 합니다.');
+        return;
+      }
+
+      setCompanyData(prev => ({
+        ...prev,
+        businessLicenseImage: file
+      }));
+    }
+  };
+
   const handleSubmit = async () => {
     try {
+      const formData = new FormData();
+      
+      // businessLicenseImage를 제외한 나머지 데이터만 포함
+      const { businessLicenseImage, ...companyDataWithoutFile } = companyData;
+      
       const formattedData = {
-        ...companyData,
+        ...companyDataWithoutFile,
         buildingPermitDate: companyData.buildingPermitDate ? companyData.buildingPermitDate.toISOString().split('T')[0] : null,
         occupancyDate: companyData.occupancyDate ? companyData.occupancyDate.toISOString().split('T')[0] : null,
         totalFloorArea: companyData.totalFloorArea ? parseFloat(companyData.totalFloorArea) : null,
@@ -176,9 +201,15 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
         status: companyData.status,
       };
 
-      const formData = new FormData();
+      // JSON 데이터를 'company'라는 이름으로 추가 (백엔드의 @RequestParam("company")와 일치)
       formData.append('company', JSON.stringify(formattedData));
+      
+      // 파일이 있는 경우에만 추가
+      if (businessLicenseImage) {
+        formData.append('businessLicenseImage', businessLicenseImage);
+      }
 
+      // 이미지 파일들 추가
       Object.keys(images).forEach(key => {
         if (images[key]) {
           formData.append(key, images[key]);
@@ -207,6 +238,12 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
 
       handleClose();
       onSubmit(savedCompany);
+
+      // 요청 내용 확인을 위한 디버깅
+      for (let pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
+      }
+
     } catch (error) {
       console.error('Error:', error);
       setSnackbar({
@@ -259,6 +296,57 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
             size="small"
             inputProps={{ maxLength: 12 }}
           />
+        </Grid>
+
+        <Grid item xs={12}>
+          <input
+            type="file"
+            accept="image/*,.pdf"
+            style={{ display: 'none' }}
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+          />
+          <Box sx={{ mb: 2 }}>
+            <Button
+              variant="outlined"
+              startIcon={<CloudUploadIcon />}
+              onClick={() => fileInputRef.current.click()}
+              fullWidth
+              sx={{
+                borderColor: '#ccc',
+                color: '#666',
+                '&:hover': {
+                  borderColor: '#1C243A',
+                  color: '#1C243A'
+                }
+              }}
+            >
+              사업자등록증 파일 첨부
+            </Button>
+          </Box>
+          
+          {companyData.businessLicenseImage && (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                p: 1,
+                bgcolor: '#f5f5f5',
+                borderRadius: 1
+              }}
+            >
+              <Typography variant="body2" sx={{ ml: 1 }}>
+                {companyData.businessLicenseImage.name}
+              </Typography>
+              <IconButton
+                size="small"
+                onClick={() => setCompanyData(prev => ({ ...prev, businessLicenseImage: null }))}
+              >
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          )}
         </Grid>
 
         <Grid item xs={12} sm={6}>
@@ -316,6 +404,7 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
               value={companyData.status}
               onChange={handleChange}
               label="상태"
+              sx={{mb: 2}}
             >
               <MenuItem value="ACTIVE">사용</MenuItem>
               <MenuItem value="TERMINATED">해지</MenuItem>
@@ -353,7 +442,7 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
       <Grid container spacing={2}>
         {imageFields.map((field) => (
           <Grid item xs={12} sm={6} key={field.name}>
-            <Paper sx={{ p: 2, border: '1px dashed #ccc', borderRadius: 2 }}>
+            <Paper sx={{ p: 2, border: '1px dashed #ccc', borderRadius: 2 , mb: 2 }}>
               <input
                 type="file"
                 accept="image/*"
@@ -431,21 +520,77 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
       <Dialog 
         open={open} 
         onClose={handleClose}
-        fullWidth
         maxWidth="sm"
-        disableRestoreFocus
-        disableEnforceFocus
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '20px',
+            bgcolor: 'white',
+            overflow: 'hidden'
+          }
+        }}
       >
-        <DialogTitle sx={{ textAlign: 'center', pb: 1 }}>
-          {showBuildingInfo ? '건축물 정보 입력' : '업체 추가'}
+        <DialogTitle sx={{ 
+          bgcolor: '#f8f9fa',
+          p: 2.5,
+          borderBottom: '1px solid #eee',
+          textAlign: 'center',
+          position: 'relative'
+        }}>
+          <Typography variant="h6" sx={{ 
+            fontWeight: 500,
+            color: '#343959'
+          }}>
+            업체 등록
+          </Typography>
+          <IconButton
+            onClick={handleClose}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: '#666'
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
         </DialogTitle>
-        
-        <DialogContent sx={{ pb: 0, maxHeight: '70vh', overflowY: 'auto' }}>
+
+        <DialogContent sx={{ 
+          p: 3,
+          '& .MuiTextField-root, & .MuiFormControl-root': {
+            '& .MuiOutlinedInput-root': {
+              bgcolor: '#f8f9fa',
+              borderRadius: '10px',
+              '& fieldset': {
+                borderColor: '#e0e0e0',
+              },
+              '&:hover fieldset': {
+                borderColor: '#343959',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: '#343959',
+              }
+            },
+            '& .MuiInputLabel-root.Mui-focused': {
+              color: '#343959',
+            }
+          },
+          '& .MuiFormLabel-root': {
+            color: '#343959',
+            fontWeight: 500,
+            mb: 1
+          }
+        }}>
           {!showBuildingInfo ? (
             <Box component="form" sx={{ mt: 1 }}>
-              <Grid container spacing={1.5}>
+              <Grid container spacing={2.5}>
                 <Grid item xs={12}>
-                  <Typography variant="subtitle1" sx={{  fontWeight: 600 }}>
+                  <Typography variant="subtitle1" sx={{ 
+                    fontWeight: 500,
+                    color: '#343959',
+                    mb: 1
+                  }}>
                     기본 정보
                   </Typography>
                 </Grid>
@@ -484,7 +629,12 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
                 </Grid>
 
                 <Grid item xs={12}>
-                  <Typography variant="subtitle1" sx={{ mt: 1, fontWeight: 600 }}>
+                  <Typography variant="subtitle1" sx={{ 
+                    fontWeight: 500,
+                    color: '#343959',
+                    mb: 1,
+                    mt: 1
+                  }}>
                     주소 정보
                   </Typography>
                 </Grid>
@@ -506,13 +656,19 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
                       variant="outlined"
                       onClick={handleAddressSearch}
                       sx={{ 
-                        minWidth: '120px',
+                        minWidth: '80px',
                         whiteSpace: 'nowrap',
-                        bgcolor: '#fff',
-                        '&:hover': { bgcolor: '#f5f5f5' }
+                        color: '#343959',
+                        borderColor: '#343959',
+                        borderRadius: '10px',
+                        '&:hover': {
+                          borderColor: '#3d63b8',
+                          color: '#3d63b8',
+                          bgcolor: 'rgba(61, 99, 184, 0.04)'
+                        }
                       }}
                     >
-                      주소 검색
+                      검색
                     </Button>
                   </Box>
                 </Grid>
@@ -532,7 +688,12 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
                 )}
 
                 <Grid item xs={12}>
-                  <Typography variant="subtitle1" sx={{ mt: 1, fontWeight: 600 }}>
+                  <Typography variant="subtitle1" sx={{ 
+                    fontWeight: 500,
+                    color: '#343959',
+                    mb: 1,
+                    mt: 1
+                  }}>
                     추가 정보
                   </Typography>
                 </Grid>
@@ -554,7 +715,21 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
             </Box>
           ) : (
             <>
-              <Stepper activeStep={activeStep} sx={{ pt: 3, pb: 5 }}>
+              <Stepper 
+                activeStep={activeStep} 
+                sx={{ 
+                  mb: 4,
+                  '& .MuiStepLabel-root .Mui-completed': {
+                    color: '#343959',
+                  },
+                  '& .MuiStepLabel-root .Mui-active': {
+                    color: '#343959',
+                  },
+                  '& .MuiStepLabel-label': {
+                    fontSize: '0.875rem'
+                  }
+                }}
+              >
                 {steps.map((label) => (
                   <Step key={label}>
                     <StepLabel>{label}</StepLabel>
@@ -1008,29 +1183,68 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
           )}
         </DialogContent>
 
-        <DialogActions sx={{ p: 2, pt: 0 }}>
+        <DialogActions sx={{ 
+          p: 2,
+          pt: 0,
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: 1,
+          '& .MuiButton-root': {
+            width: { xs: '100%', sm: 'auto' },
+            minWidth: { xs: '100%', sm: '80px' },
+            fontSize: { xs: '0.875rem', sm: '0.8125rem' },
+            borderRadius: '8px',
+            ml: '0 !important',
+          },
+          '& .MuiButton-contained': {
+            color: 'white',
+            '&:hover': {
+              bgcolor: '#3d63b8',
+            }
+          }
+        }}>
           {!showBuildingInfo ? (
             <>
               <Button 
                 onClick={handleClose}
                 variant="outlined"
-                sx={{ mr: 1 }}
+                sx={{ 
+                  color: '#343959',
+                  borderColor: '#343959',
+                  '&:hover': {
+                    borderColor: '#3d63b8',
+                    color: '#3d63b8',
+                    bgcolor: 'rgba(61, 99, 184, 0.04)'
+                  }
+                }}
               >
                 취소
               </Button>
               <Button
                 onClick={() => setShowBuildingInfo(true)}
                 variant="outlined"
-                sx={{ mr: 1 }}
+                sx={{ 
+                  color: '#343959',
+                  borderColor: '#343959',
+                  '&:hover': {
+                    borderColor: '#3d63b8',
+                    color: '#3d63b8',
+                    bgcolor: 'rgba(61, 99, 184, 0.04)'
+                  }
+                }}
               >
                 추가정보 입력
               </Button>
               <Button 
                 onClick={handleSubmit}
                 variant="contained"
-                sx={{
-                  bgcolor: '#1C243A',
-                  '&:hover': { bgcolor: '#3d63b8' }
+                sx={{ 
+                  bgcolor: '#343959',
+                  '&:hover': { 
+                    bgcolor: '#3d63b8'
+                  },
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                  fontWeight: 500
                 }}
               >
                 저장
@@ -1041,7 +1255,15 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
               <Button 
                 onClick={handleClose}
                 variant="outlined"
-                sx={{ mr: 1 }}
+                sx={{ 
+                  color: '#343959',
+                  borderColor: '#343959',
+                  '&:hover': {
+                    borderColor: '#3d63b8',
+                    color: '#3d63b8',
+                    bgcolor: 'rgba(61, 99, 184, 0.04)'
+                  }
+                }}
               >
                 취소
               </Button>
@@ -1049,7 +1271,15 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
                 <Button 
                   onClick={handleBack}
                   variant="outlined"
-                  sx={{ mr: 1 }}
+                  sx={{ 
+                    color: '#343959',
+                    borderColor: '#343959',
+                    '&:hover': {
+                      borderColor: '#3d63b8',
+                      color: '#3d63b8',
+                      bgcolor: 'rgba(61, 99, 184, 0.04)'
+                    }
+                  }}
                 >
                   이전
                 </Button>
@@ -1058,9 +1288,13 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
                 <Button 
                   onClick={handleSubmit}
                   variant="contained"
-                  sx={{
-                    bgcolor: '#1C243A',
-                    '&:hover': { bgcolor: '#3d63b8' }
+                  sx={{ 
+                    bgcolor: '#343959',
+                    '&:hover': { 
+                      bgcolor: '#3d63b8'
+                    },
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                    fontWeight: 500
                   }}
                 >
                   완료
@@ -1069,9 +1303,13 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
                 <Button 
                   onClick={handleNext}
                   variant="contained"
-                  sx={{
-                    bgcolor: '#1C243A',
-                    '&:hover': { bgcolor: '#3d63b8' }
+                  sx={{ 
+                    bgcolor: '#343959',
+                    '&:hover': { 
+                      bgcolor: '#3d63b8'
+                    },
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                    fontWeight: 500
                   }}
                 >
                   다음

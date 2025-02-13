@@ -209,15 +209,16 @@ const CompanyList = () => {
         </TableContainer>
 
         {/* 업체 추가 버튼 */}
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 , borderRadius: '10px' }}>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => setDialogOpen(true)}
             sx={{
-              bgcolor: '#1C243A',
+              bgcolor: '#343959',
               '&:hover': {
-                bgcolor: '#3d63b8'
+                bgcolor: '#3d63b8',
+                borderRadius: '10px'
               }
             }}
           >
