@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     width: '30%',
   },
   inspectionSection: {
-    marginBottom: 30,
+    marginBottom: 35,
     border: '1pt solid #808080',
   },
   inspectionContent: {
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   inspectionRow: {
     flexDirection: 'row',
     borderBottom: '1pt solid #808080',
-    minHeight: 70,
+    minHeight: 60,
   },
   inspectionLabel: {
     width: '20%',
@@ -136,8 +136,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-end',
     backgroundColor: 'white',
-    marginTop: 'auto',
-    paddingTop: 20,
+    marginTop: 5,
+    marginBottom: 15,
   },
   footerLeft: {
     width: '40%',
@@ -217,7 +217,13 @@ const styles = StyleSheet.create({
   lastRow: {
     flexDirection: 'row',
     borderBottom: '1pt solid #808080',
-    minHeight: 70,
+    minHeight: 60,
+  },
+  websiteInfo: {
+    textAlign: 'center',
+    fontSize: 8,
+    color: '#666666',
+    marginBottom: 10,
   },
 });
 
@@ -356,6 +362,11 @@ const FireSafetyInspectionPDF = ({ inspection }) => {
             </View>
           </View>
         </View>
+
+        {/* 문의 웹사이트 정보 */}
+        <Text style={styles.websiteInfo}>
+          문의 www.oasyss.co.kr
+        </Text>
 
         {/* 이미지 섹션 */}
         <ImagesSection attachments={inspection.attachments} />

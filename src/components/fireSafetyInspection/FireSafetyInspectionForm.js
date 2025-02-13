@@ -362,6 +362,11 @@ const FireSafetyInspectionForm = () => {
     }
   };
 
+  const handleAddressSearch = () => {
+    // 주소 검색 로직을 구현해야 합니다.
+    console.log("주소 검색 로직을 구현해야 합니다.");
+  };
+
   return (
     <Container maxWidth="sm" disableGutters>
       {/* 헤더 */}
@@ -464,15 +469,18 @@ const FireSafetyInspectionForm = () => {
               required
             />
 
-            <TextField
-              fullWidth
-              label="주소"
-              margin="normal"
-              value={formData.address}
-              InputProps={{
-                readOnly: true,
-              }}
-            />
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <TextField
+                fullWidth
+                label="주소"
+                margin="normal"
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                error={formErrors.buildingAddress}
+                helperText={formErrors.buildingAddress ? "주소를 입력해주세요" : ""}
+                required
+              />
+            </Box>
 
             <TextField
               fullWidth
