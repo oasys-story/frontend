@@ -9,269 +9,264 @@ import {
   Paper,
   Snackbar,
   Alert,
-  Checkbox,
-  FormControlLabel
+  InputAdornment
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import MessageIcon from '@mui/icons-material/Message';
-import axios from 'axios';
 
 const ContactForm = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    message: '',
-    agreement: false
+    guestName: '',
+    phoneNumber: '',
+    password: '',
+    content: ''
   });
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
     severity: 'success'
   });
+  const [errors, setErrors] = useState({});
 
-  // 전화번호 형식 검증 함수
+  // 전화번호 형식 검증
   const validatePhone = (phone) => {
     const phoneRegex = /^01([0|1|6|7|8|9])-?([0-9]{3,4})-?([0-9]{4})$/;
     return phoneRegex.test(phone);
   };
 
-  // API 호출 함수
-  const sendInquiry = async (inquiryData) => {
-    try {
-      const params = new URLSearchParams();
-      params.append('name', inquiryData.name);
-      params.append('phone', inquiryData.phone);
-      params.append('content', inquiryData.message);
-
-      const response = await axios.post('http://localhost:8080/api/sms/send', params, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
-        }
-      });
-      
-      return response.status === 200;
-    } catch (error) {
-      console.error('문의 전송 실패:', error);
-      return false;
+  // 입력값 유효성 검사
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.guestName.trim()) {
+      newErrors.guestName = '이름을 입력해주세요';
     }
+    if (!formData.phoneNumber) {
+      newErrors.phoneNumber = '연락처를 입력해주세요';
+    } else if (!validatePhone(formData.phoneNumber)) {
+      newErrors.phoneNumber = '올바른 연락처 형식이 아닙니다';
+    }
+    if (!formData.password) {
+      newErrors.password = '비밀번호를 입력해주세요';
+    } else if (formData.password.length < 4) {
+      newErrors.password = '비밀번호는 4자 이상이어야 합니다';
+    }
+    if (!formData.content.trim()) {
+      newErrors.content = '문의 내용을 입력해주세요';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  // 폼 제출 핸들러 수정
+  // 폼 제출
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.agreement) {
-      setSnackbar({
-        open: true,
-        message: '개인정보 처리방침에 동의해주세요.',
-        severity: 'error'
-      });
+    if (!validateForm()) {
       return;
     }
 
-    // 전화번호 형식 검증
-    if (!validatePhone(formData.phone)) {
+    // 전화번호에서 하이픈 추가
+    const formattedPhone = formData.phoneNumber.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+
+    try {
+      const response = await fetch('http://localhost:8080/api/guest-inquiries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          guestName: formData.guestName,
+          phoneNumber: formattedPhone,
+          password: formData.password,
+          content: formData.content
+        })
+      });
+
+      if (response.ok) {
+        setSnackbar({
+          open: true,
+          message: '문의가 등록되었습니다. 답변은 입력하신 연락처로 안내드립니다.',
+          severity: 'success'
+        });
+        // 폼 초기화
+        setFormData({
+          guestName: '',
+          phoneNumber: '',
+          password: '',
+          content: ''
+        });
+        setIsOpen(false);
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || '문의 등록에 실패했습니다.');
+      }
+    } catch (error) {
       setSnackbar({
         open: true,
-        message: '올바른 전화번호 형식이 아닙니다.',
+        message: error.message,
         severity: 'error'
       });
-      return;
     }
-
-    // 로딩 상태 표시 추가
-    setSnackbar({
-      open: true,
-      message: '전송 중입니다...',
-      severity: 'info'
-    });
-
-    const success = await sendInquiry(formData);
-    
-    if (success) {
-      setSnackbar({
-        open: true,
-        message: '문의사항이 전송되었습니다.',
-        severity: 'success'
-      });
-      setFormData({ name: '', phone: '', message: '', agreement: false });
-      setIsOpen(false);
-    } else {
-      setSnackbar({
-        open: true,
-        message: '전송에 실패했습니다. 다시 시도해주세요.',
-        severity: 'error'
-      });
-    }
-  };
-
-  // TextField의 onChange 핸들러 수정 (전화번호 자동 하이픈 추가)
-  const handlePhoneChange = (e) => {
-    const value = e.target.value.replace(/[^0-9]/g, '');
-    let formattedPhone = value;
-    if (value.length >= 3) {
-      formattedPhone = value.replace(/(\d{3})(\d{0,4})(\d{0,4})/, '$1-$2-$3').replace(/-{1,2}$/, '');
-    }
-    setFormData({ ...formData, phone: formattedPhone });
   };
 
   return (
     <>
-      {/* 문의하기 버튼 */}
-      <Box
+      <IconButton
+        onClick={() => setIsOpen(true)}
         sx={{
           position: 'fixed',
-          bottom: 20,
-          right: 20,
+          bottom: { xs: 16, sm: 20 },
+          right: { xs: 16, sm: 20 },
+          bgcolor: '#343959',
+          color: 'white',
+          '&:hover': { bgcolor: '#3d63b8' },
+          boxShadow: 3,
           zIndex: 1000
         }}
       >
-        <Button
-          variant="contained"
-          onClick={() => setIsOpen(!isOpen)}
-          startIcon={<MessageIcon />}
-          sx={{
-            bgcolor: '#343959',
-            '&:hover': { bgcolor: '#3d63b8' },
-            borderRadius: '25px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-            padding: '10px 20px'
-          }}
-        >
-          문의하기
-        </Button>
-      </Box>
+        <MessageIcon />
+      </IconButton>
 
-      {/* 문의 폼 */}
       <Slide direction="up" in={isOpen} mountOnEnter unmountOnExit>
         <Paper
-          elevation={3}
+          elevation={4}
           sx={{
             position: 'fixed',
-            bottom: 80,
-            right: 20,
-            width: '340px',
-            borderRadius: '20px',
-            bgcolor: 'white',
-            zIndex: 1000,
-            overflow: 'hidden'
+            bottom: 0,
+            left: 0,
+            right: 0,
+            width: '100%',
+            maxWidth: '100%',
+            height: '60vh',
+            overflowY: 'auto',
+            borderRadius: '20px 20px 0 0',
+            zIndex: 1001,
+            boxShadow: '0px -4px 10px rgba(0, 0, 0, 0.1)',
+            '@media (min-width: 431px)': {
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '430px'
+            }
           }}
         >
           <Box sx={{ 
-            bgcolor: '#f8f9fa',
             p: 2.5,
-            borderBottom: '1px solid #eee'
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column'
           }}>
-            <Typography variant="h6" sx={{ 
-              fontWeight: 500,
-              color: '#343959',
-              textAlign: 'center'
-            }}>
-              지금 문의하세요.
-            </Typography>
-            <IconButton 
-              onClick={() => setIsOpen(false)}
+            <Box 
               sx={{ 
-                position: 'absolute',
-                right: 8,
-                top: 8,
-                color: '#666'
+                width: '40px',
+                height: '4px',
+                bgcolor: '#e0e0e0',
+                borderRadius: '2px',
+                margin: '-8px auto 16px',
+              }} 
+            />
+
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              mb: 2
+            }}>
+              <Typography 
+                variant="h6" 
+                sx={{ 
+                  flex: 1, 
+                  fontSize: '1.1rem',
+                  fontWeight: 500,
+                  color: '#1C243A'
+                }}
+              >
+                문의하기
+              </Typography>
+              <IconButton 
+                onClick={() => setIsOpen(false)} 
+                size="small"
+                sx={{ mr: -1 }}
+              >
+                <CloseIcon />
+              </IconButton>
+            </Box>
+
+            <Box 
+              component="form" 
+              onSubmit={handleSubmit} 
+              sx={{ 
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2
               }}
             >
-              <CloseIcon />
-            </IconButton>
-          </Box>
+              <TextField
+                fullWidth
+                placeholder="이름"
+                value={formData.guestName}
+                onChange={(e) => setFormData({ ...formData, guestName: e.target.value })}
+                error={!!errors.guestName}
+                helperText={errors.guestName}
+                size="small"
+                required
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: '#f8f9fa'
+                  }
+                }}
+              />
+              
+              <TextField
+                fullWidth
+                placeholder="연락처 (예: 010-1234-5678)"
+                value={formData.phoneNumber}
+                onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                error={!!errors.phoneNumber}
+                helperText={errors.phoneNumber}
+                size="small"
+                required
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: '#f8f9fa'
+                  }
+                }}
+              />
 
-          <Box sx={{ p: 3 }}>
-            <form onSubmit={handleSubmit}>
               <TextField
                 fullWidth
-                placeholder="회사명 또는 담당자 이름"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="비밀번호 (4자리 이상)"
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                error={!!errors.password}
+                helperText={errors.password}
                 size="small"
                 required
                 sx={{
-                  mb: 2,
                   '& .MuiOutlinedInput-root': {
-                    bgcolor: '#f8f9fa',
-                    borderRadius: '10px',
-                    '& fieldset': {
-                      borderColor: '#e0e0e0',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: '#343959',
-                    },
+                    bgcolor: '#f8f9fa'
                   }
                 }}
               />
               
               <TextField
                 fullWidth
-                placeholder="담당자 연락처"
-                value={formData.phone}
-                onChange={handlePhoneChange}
-                size="small"
-                required
-                sx={{
-                  mb: 2,
-                  '& .MuiOutlinedInput-root': {
-                    bgcolor: '#f8f9fa',
-                    borderRadius: '10px',
-                    '& fieldset': {
-                      borderColor: '#e0e0e0',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: '#343959',
-                    },
-                  }
-                }}
-              />
-              
-              <TextField
-                fullWidth
-                placeholder="문의내용을 적어주시면 맞춤 상담 해드립니다."
-                value={formData.message}
-                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                placeholder="문의내용을 입력해주세요"
+                value={formData.content}
+                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                error={!!errors.content}
+                helperText={errors.content}
                 multiline
-                rows={4}
+                rows={3}
                 required
                 sx={{
-                  mb: 2,
+                  flex: 1,
                   '& .MuiOutlinedInput-root': {
                     bgcolor: '#f8f9fa',
-                    borderRadius: '10px',
-                    '& fieldset': {
-                      borderColor: '#e0e0e0',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: '#343959',
-                    },
+                    height: '100%'
                   }
                 }}
-              />
-
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={formData.agreement}
-                    onChange={(e) => setFormData({ ...formData, agreement: e.target.checked })}
-                    sx={{
-                      color: '#343959',
-                      '&.Mui-checked': {
-                        color: '#343959',
-                      },
-                    }}
-                  />
-                }
-                label={
-                  <Typography variant="body2" sx={{ color: '#666', fontSize: '0.8rem' }}>
-                    개인정보 처리방침에 동의합니다. [상세보기]
-                  </Typography>
-                }
-                sx={{ mb: 2 }}
               />
 
               <Button
@@ -283,13 +278,12 @@ const ContactForm = () => {
                   '&:hover': { bgcolor: '#3d63b8' },
                   borderRadius: '10px',
                   py: 1.5,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                  fontWeight: 500
+                  mt: 'auto'
                 }}
               >
-                문의사항 전송하기
+                문의하기
               </Button>
-            </form>
+            </Box>
           </Box>
         </Paper>
       </Slide>
@@ -298,6 +292,7 @@ const ContactForm = () => {
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert 
           onClose={() => setSnackbar({ ...snackbar, open: false })} 

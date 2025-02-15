@@ -13,6 +13,10 @@ import {
   DialogTitle,
   DialogActions,
   TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import { PDFDownloadLink } from '@react-pdf/renderer';
@@ -33,6 +37,8 @@ const FireSafetyInspectionResult = () => {
   const [sending, setSending] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [employees, setEmployees] = useState([]);
 
   useEffect(() => {
     const initialize = async () => {
@@ -186,6 +192,28 @@ const FireSafetyInspectionResult = () => {
     }
   };
 
+  const fetchEmployees = async () => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/companies/${inspection?.companyId}/employees`, {
+        headers: {
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setEmployees(data.filter(emp => emp.active));
+      }
+    } catch (error) {
+      console.error('직원 정보 조회 실패:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (smsDialogOpen && inspection?.companyId) {
+      fetchEmployees();
+    }
+  }, [smsDialogOpen, inspection?.companyId]);
+
   if (loading) {
     return <Box sx={{ p: 3 }}>로딩 중...</Box>;
   }
@@ -331,29 +359,24 @@ const FireSafetyInspectionResult = () => {
                 />
               ) : (
                 <Box
-                  onClick={() => 
-                    sessionStorage.getItem('role') === 'USER'
-                      ? setSignatureDialogOpen(true) 
-                      : alert('점검대상업체만 서명할 수 있습니다.')
-                  }
+                  onClick={() => setSignatureDialogOpen(true)}
                   sx={{ 
                     width: '100%', 
                     height: '100px', 
-                    border: '1px dashed #1C243A',
+                    border: '1px dashed #343959',
                     borderRadius: 1,
                     mt: 1,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    cursor: sessionStorage.getItem('role') === 'USER' ? 'pointer' : 'not-allowed',
-                    opacity: sessionStorage.getItem('role') === 'USER' ? 1 : 0.6,
+                    cursor: 'pointer',
                     '&:hover': {
-                      bgcolor: sessionStorage.getItem('role') === 'USER' ? 'rgba(28, 36, 58, 0.04)' : undefined
+                      bgcolor: 'rgba(52, 57, 89, 0.04)'
                     }
                   }}
                 >
                   <Typography color="primary">
-                    {sessionStorage.getItem('role') === 'USER' ? '서명하기' : '점검대상업체 전용'}
+                    서명하기
                   </Typography>
                 </Box>
               )}
@@ -533,34 +556,112 @@ const FireSafetyInspectionResult = () => {
       />
 
       <Dialog open={smsDialogOpen} onClose={() => !sending && setSmsDialogOpen(false)}>
-        <DialogTitle>점검 결과 공유하기</DialogTitle>
+        <DialogTitle sx={{ 
+          bgcolor: '#f8f9fa',
+          p: 2.5,
+          borderBottom: '1px solid #eee',
+          textAlign: 'center',
+          position: 'relative'
+        }}>
+          <Typography variant="h6" sx={{ fontWeight: 500, color: '#343959' }}>
+            점검 결과 공유하기
+          </Typography>
+        </DialogTitle>
         <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="전화번호"
-            type="tel"
-            fullWidth
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
-            disabled={sending}
-            placeholder="010-0000-0000"
-            helperText="'-' 없이 입력해도 됩니다."
-          />
+          <Box sx={{ mt: 2 }}>
+            <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+              <InputLabel id="employee-select-label">전송할 직원 선택</InputLabel>
+              <Select
+                labelId="employee-select-label"
+                value={selectedEmployee ? selectedEmployee.employeeId : ''}
+                onChange={(e) => {
+                  const selected = employees.find(emp => emp.employeeId === e.target.value);
+                  setSelectedEmployee(selected);
+                  setPhoneNumber(selected ? selected.phone : '');
+                }}
+                label="전송할 직원 선택"
+                sx={{
+                  bgcolor: '#f8f9fa',
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#e0e0e0'
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#343959'
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#343959'
+                  }
+                }}
+              >
+                <MenuItem value="" sx={{ color: '#666' }}>
+                  <em>직원 선택</em>
+                </MenuItem>
+                {employees.map((employee) => (
+                  <MenuItem 
+                    key={employee.employeeId} 
+                    value={employee.employeeId}
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      gap: 1
+                    }}
+                  >
+                    <Typography>{employee.name}</Typography>
+                    <Typography color="text.secondary" variant="body2">
+                      {employee.phone}
+                    </Typography>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center',
+              my: 2,
+              color: '#666'
+            }}>
+              <Divider sx={{ flex: 1 }} />
+              <Typography variant="body2" sx={{ mx: 1 }}>또는</Typography>
+              <Divider sx={{ flex: 1 }} />
+            </Box>
+
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+              직접 입력
+            </Typography>
+            <TextField
+              margin="dense"
+              label="전화번호"
+              type="tel"
+              fullWidth
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              disabled={sending}
+              placeholder="010-0000-0000"
+              helperText="'-' 없이 입력해도 됩니다."
+              size="small"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: '#f8f9fa'
+                }
+              }}
+            />
+          </Box>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ p: 2, borderTop: '1px solid #eee' }}>
           <Button 
             onClick={() => setSmsDialogOpen(false)} 
             disabled={sending}
+            sx={{ color: '#666' }}
           >
             취소
           </Button>
           <Button 
             onClick={handleSendSMS} 
             variant="contained"
-            disabled={sending}
+            disabled={sending || !phoneNumber}
             sx={{ 
-              bgcolor: '#1C243A',
+              bgcolor: '#343959',
               '&:hover': { bgcolor: '#3d63b8' }
             }}
           >

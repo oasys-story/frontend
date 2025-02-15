@@ -13,7 +13,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Grid
+  Grid,
+  IconButton
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -21,6 +22,8 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import ImageIcon from '@mui/icons-material/Image';
 import axios from 'axios';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 const CompanyManagement = () => {
   const { companyId } = useParams();
@@ -41,6 +44,26 @@ const CompanyManagement = () => {
     detailAddress: '',
     businessLicenseImage: null
   });
+  const [employees, setEmployees] = useState([]);
+  const [newEmployee, setNewEmployee] = useState({ name: '', phone: '' });
+
+  // fetchEmployees 함수를 컴포넌트 레벨로 이동
+  const fetchEmployees = async () => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/companies/${companyId}/employees`, {
+        headers: {
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        // active 상태와 관계없이 모든 직원 정보 저장
+        setEmployees(data);
+      }
+    } catch (error) {
+      console.error('직원 정보 조회 실패:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchCompanyData = async () => {
@@ -61,6 +84,7 @@ const CompanyManagement = () => {
 
     if (companyId) {
       fetchCompanyData();
+      fetchEmployees();
     }
   }, [companyId]);
 
@@ -82,7 +106,8 @@ const CompanyManagement = () => {
           ? company.terminationDate.toISOString().split('T')[0] 
           : company.terminationDate,
         monthlyFee: company.monthlyFee ? parseFloat(company.monthlyFee) : null,
-        status: company.status
+        status: company.status,
+        employees: employees
       };
 
       const formData = new FormData();
@@ -99,6 +124,7 @@ const CompanyManagement = () => {
       if (response.ok) {
         const updatedCompany = await response.json();
         setCompany(updatedCompany);
+        fetchEmployees();
         alert('업체 정보가 수정되었습니다.');
       } else {
         alert('업체 정보 수정에 실패했습니다.');
@@ -227,8 +253,75 @@ const CompanyManagement = () => {
     return `${name.substring(0, maxLength - extension.length - 3)}...${extension}`;
   };
 
+  // 직원 추가
+  const handleAddEmployee = async () => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/companies/${companyId}/employees`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+        },
+        body: JSON.stringify(newEmployee)
+      });
+      
+      if (response.ok) {
+        setNewEmployee({ name: '', phone: '' });
+        fetchEmployees();
+      }
+    } catch (error) {
+      console.error('직원 추가 실패:', error);
+    }
+  };
+
+  // 직원 정보 수정 (로컬 상태만 업데이트)
+  const handleEmployeeChange = (employeeId, field, value) => {
+    setEmployees(prevEmployees => 
+      prevEmployees.map(emp => 
+        emp.employeeId === employeeId 
+          ? { ...emp, [field]: value }
+          : emp
+      )
+    );
+  };
+
+  // 직원 비활성화 (삭제 대신)
+  const handleDeactivateEmployee = async (employeeId) => {
+    try {
+      const employee = employees.find(emp => emp.employeeId === employeeId);
+      
+      // 요청 URL과 데이터 로깅
+      const url = `http://localhost:8080/api/companies/${companyId}/employees/${employeeId}`;
+      const requestData = {
+        name: employee.name,
+        phone: employee.phone,
+        active: false
+      };
+      
+
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+        },
+        body: JSON.stringify(requestData)
+      });
+      
+      const responseText = await response.text();
+
+      if (response.ok) {
+        fetchEmployees();
+      } else {
+        console.error('직원 비활성화 실패: 서버 응답 오류', responseText);
+      }
+    } catch (error) {
+      console.error('직원 비활성화 실패:', error);
+    }
+  };
+
   return (
-    <Box sx={{ p: 2, maxWidth: '430px', margin: '0 auto' }}>
+    <Box sx={{ p: 2, maxWidth: '430px', margin: '0 auto', minHeight: '100vh' }}>
       {/* 헤더 */}
       <Box sx={{ 
         mb: 4,
@@ -617,6 +710,111 @@ const CompanyManagement = () => {
             </LocalizationProvider>
           )}
 
+          {/* 직원 정보 섹션 */}
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 500, color: '#343959', mb: 2 }}>
+              직원 정보
+            </Typography>
+            
+            {/* 기존 직원 목록 */}
+            {employees.filter(emp => emp.active).map((employee) => (
+              <Box 
+                key={employee.employeeId}
+                sx={{ 
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  mb: 2
+                }}
+              >
+                <TextField
+                  size="small"
+                  label="이름"
+                  value={employee.name}
+                  onChange={(e) => handleEmployeeChange(employee.employeeId, 'name', e.target.value)}
+                  sx={{ 
+                    width: '30%',
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: '#f8f9fa'
+                    }
+                  }}
+                />
+                <TextField
+                  size="small"
+                  label="핸드폰번호"
+                  value={employee.phone}
+                  onChange={(e) => handleEmployeeChange(employee.employeeId, 'phone', e.target.value)}
+                  sx={{ 
+                    width: '50%',
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: '#f8f9fa'
+                    }
+                  }}
+                />
+                <IconButton 
+                  onClick={() => handleDeactivateEmployee(employee.employeeId)}
+                  sx={{ 
+                    color: '#666',
+                    '&:hover': { color: '#ff4444' }
+                  }}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </Box>
+            ))}
+            
+            {/* 새 직원 추가 폼 */}
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'flex-start', 
+              gap: 2, 
+              mt: 3,
+              pt: 2,
+              borderTop: '1px solid #eee'
+            }}>
+              <TextField
+                size="small"
+                label="이름"
+                value={newEmployee.name}
+                onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
+                sx={{ width: '30%' }}
+                error={Boolean(!newEmployee.name && newEmployee.phone)}
+                helperText={!newEmployee.name && newEmployee.phone ? "이름을 입력하세요" : " "}
+              />
+              <TextField
+                size="small"
+                label="핸드폰번호"
+                value={newEmployee.phone}
+                onChange={(e) => setNewEmployee({ ...newEmployee, phone: e.target.value })}
+                sx={{ width: '50%' }}
+                error={Boolean(newEmployee.name && !newEmployee.phone)}
+                helperText={newEmployee.name && !newEmployee.phone ? "핸드폰번호를 입력하세요" : " "}
+              />
+              <Button
+                variant="outlined"
+                startIcon={<AddIcon />}
+                onClick={handleAddEmployee}
+                disabled={!newEmployee.name || !newEmployee.phone}
+                sx={{ 
+                  color: '#343959',
+                  borderColor: '#343959',
+                  height: '40px',
+                  '&:hover': {
+                    borderColor: '#3d63b8',
+                    color: '#3d63b8',
+                    bgcolor: 'rgba(61, 99, 184, 0.04)'
+                  },
+                  '&.Mui-disabled': {
+                    color: '#ccc',
+                    borderColor: '#ccc'
+                  }
+                }}
+              >
+                추가
+              </Button>
+            </Box>
+          </Box>
+
           <Box sx={{ 
             display: 'flex', 
             gap: 1.5, 
@@ -661,6 +859,7 @@ const CompanyManagement = () => {
           </Box>
         </Box>
       </form>
+
     </Box>
   );
 };

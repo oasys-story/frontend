@@ -84,19 +84,22 @@ const Sidebar = () => {
       items: [
         { text: '공지사항', path: '/notices' },
         { text: '문의사항', path: '/inquiries' },
-        { text: '고객센터', path: '/customer' }
+        { text: '고객센터', path: '/customer' },
+        { text: '비회원 문의', path: '/guest-inquiries' }
       ]
     },
     // 관리자 메뉴 (ADMIN과 MANAGER만 볼 수 있음)
     ...(isAdminOrManager ? [{
-      category: '일정/관리',
+      category: '관리자 메뉴',
       items: [
         // { text: '일정 관리', path: '/schedule-management' },
         { text: '업체 관리', path: '/companies' },
         { text: '사용자 관리', path: '/users' },
+        { text: '알림톡 관리', path: '/kakao-alert-list' },
+        { text: '비회원 문의관리', path: '/admin/inquiries' }
         // { text: '설정', path: '/settings/dashboard' }
       ]
-    }] : [])
+    }] : []),
   ];
 
   const toggleDrawer = (open) => (event) => {

@@ -24,15 +24,17 @@ import {
   Step,
   StepLabel,
   InputAdornment,
+  IconButton,
 } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import Paper from '@mui/material/Paper';
-import IconButton from '@mui/material/IconButton';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CloseIcon from '@mui/icons-material/Close';
 import ImageIcon from '@mui/icons-material/Image';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
 
 const CompanyDialog = ({ open, onClose, onSubmit }) => {
   const initialState = {
@@ -91,6 +93,9 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
     etcImage3: null,
     etcImage4: null
   });
+  const [employees, setEmployees] = useState([
+    { name: '', phoneNumber: '' }
+  ]);
 
   const steps = ['건물 정보', '계약 정보', '이미지 등록'];
 
@@ -164,9 +169,17 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
 
   const handleSubmit = async () => {
     try {
+      // 중복 제출 방지를 위한 검증
+      const uniqueEmployees = employees.filter(emp => emp.name && emp.phoneNumber).reduce((acc, current) => {
+        const x = acc.find(item => item.name === current.name && item.phoneNumber === current.phoneNumber);
+        if (!x) {
+          return acc.concat([current]);
+        } else {
+          return acc;
+        }
+      }, []);
+
       const formData = new FormData();
-      
-      // businessLicenseImage를 제외한 나머지 데이터만 포함
       const { businessLicenseImage, ...companyDataWithoutFile } = companyData;
       
       const formattedData = {
@@ -199,9 +212,14 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
         terminationDate: companyData.terminationDate ? companyData.terminationDate.toISOString().split('T')[0] : null,
         monthlyFee: companyData.monthlyFee ? parseFloat(companyData.monthlyFee) : null,
         status: companyData.status,
+        employees: uniqueEmployees.map(emp => ({
+          name: emp.name,
+          phone: emp.phoneNumber,
+          active: true
+        }))
       };
 
-      // JSON 데이터를 'company'라는 이름으로 추가 (백엔드의 @RequestParam("company")와 일치)
+      // JSON 데이터를 'company'라는 이름으로 추가
       formData.append('company', JSON.stringify(formattedData));
       
       // 파일이 있는 경우에만 추가
@@ -241,7 +259,6 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
 
       // 요청 내용 확인을 위한 디버깅
       for (let pair of formData.entries()) {
-        console.log(pair[0], pair[1]);
       }
 
     } catch (error) {
@@ -279,75 +296,7 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
   const ContractInfoStep = () => (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Grid container spacing={2}>
-        <Grid item xs={12}>
-          <TextField
-            fullWidth
-            label="사업자 번호"
-            name="businessNumber"
-            defaultValue={companyData.businessNumber}
-            onBlur={(e) => {
-              const value = e.target.value;
-              setCompanyData(prev => ({
-                ...prev,
-                businessNumber: value
-              }));
-            }}
-            placeholder="000-00-00000"
-            size="small"
-            inputProps={{ maxLength: 12 }}
-          />
-        </Grid>
 
-        <Grid item xs={12}>
-          <input
-            type="file"
-            accept="image/*,.pdf"
-            style={{ display: 'none' }}
-            ref={fileInputRef}
-            onChange={handleFileUpload}
-          />
-          <Box sx={{ mb: 2 }}>
-            <Button
-              variant="outlined"
-              startIcon={<CloudUploadIcon />}
-              onClick={() => fileInputRef.current.click()}
-              fullWidth
-              sx={{
-                borderColor: '#ccc',
-                color: '#666',
-                '&:hover': {
-                  borderColor: '#1C243A',
-                  color: '#1C243A'
-                }
-              }}
-            >
-              사업자등록증 파일 첨부
-            </Button>
-          </Box>
-          
-          {companyData.businessLicenseImage && (
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                p: 1,
-                bgcolor: '#f5f5f5',
-                borderRadius: 1
-              }}
-            >
-              <Typography variant="body2" sx={{ ml: 1 }}>
-                {companyData.businessLicenseImage.name}
-              </Typography>
-              <IconButton
-                size="small"
-                onClick={() => setCompanyData(prev => ({ ...prev, businessLicenseImage: null }))}
-              >
-                <CloseIcon fontSize="small" />
-              </IconButton>
-            </Box>
-          )}
-        </Grid>
 
         <Grid item xs={12} sm={6}>
           <DatePicker
@@ -515,13 +464,31 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
     );
   };
 
+  // 직원 추가 핸들러
+  const handleAddEmployee = () => {
+    setEmployees([...employees, { name: '', phoneNumber: '' }]);
+  };
+
+  // 직원 제거 핸들러
+  const handleRemoveEmployee = (index) => {
+    const newEmployees = employees.filter((_, i) => i !== index);
+    setEmployees(newEmployees);
+  };
+
+  // 직원 정변경 핸들러
+  const handleEmployeeChange = (index, field, value) => {
+    const newEmployees = [...employees];
+    newEmployees[index][field] = value;
+    setEmployees(newEmployees);
+  };
+
   return (
     <>
-      <Dialog 
-        open={open} 
+    <Dialog 
+      open={open} 
         onClose={handleClose}
         maxWidth="sm"
-        fullWidth
+      fullWidth
         PaperProps={{
           sx: {
             borderRadius: '20px',
@@ -537,25 +504,30 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
           textAlign: 'center',
           position: 'relative'
         }}>
-          <Typography variant="h6" sx={{ 
-            fontWeight: 500,
-            color: '#343959'
-          }}>
-            업체 등록
-          </Typography>
+          <Box>
+            <Typography variant="h6" sx={{ 
+              fontWeight: 500,
+              color: '#343959'
+            }}>
+              업체 등록
+            </Typography>
+          </Box>
           <IconButton
             onClick={handleClose}
             sx={{
               position: 'absolute',
               right: 8,
               top: 8,
-              color: '#666'
+              color: '#666',
+              '&:hover': {
+                color: '#ff4444'
+              }
             }}
           >
             <CloseIcon />
           </IconButton>
-        </DialogTitle>
-
+      </DialogTitle>
+      
         <DialogContent sx={{ 
           p: 3,
           '& .MuiTextField-root, & .MuiFormControl-root': {
@@ -596,36 +568,176 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
                 </Grid>
 
                 <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="업체명"
-                    name="companyName"
+          <TextField
+            fullWidth
+            label="업체명"
+            name="companyName"
                     value={companyData.companyName}
-                    onChange={handleChange}
+            onChange={handleChange}
                     size="small"
                   />
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12}>
                   <TextField
                     fullWidth
+                    label="사업자 번호"
+                    name="businessNumber"
+                    defaultValue={companyData.businessNumber}
+                    onBlur={(e) => {
+                      const value = e.target.value;
+                      setCompanyData(prev => ({
+                        ...prev,
+                        businessNumber: value
+                      }));
+                    }}
+                    placeholder="000-00-00000"
+                    size="small"
+                    inputProps={{ maxLength: 12 }}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    style={{ display: 'none' }}
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                  />
+                  <Box sx={{ mb: 2 }}>
+                    <Button
+                      variant="outlined"
+                      startIcon={<CloudUploadIcon />}
+                      onClick={() => fileInputRef.current.click()}
+                      fullWidth
+                      sx={{
+                        borderColor: '#ccc',
+                        color: '#666',
+                        '&:hover': {
+                          borderColor: '#1C243A',
+                          color: '#1C243A'
+                        }
+                      }}
+                    >
+                      사업자등록증 파일 첨부
+                    </Button>
+                  </Box>
+                  
+                  {companyData.businessLicenseImage && (
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        p: 1,
+                        bgcolor: '#f5f5f5',
+                        borderRadius: 1
+                      }}
+                    >
+                      <Typography variant="body2" sx={{ ml: 1 }}>
+                        {companyData.businessLicenseImage.name}
+                      </Typography>
+                      <IconButton
+                        size="small"
+                        onClick={() => setCompanyData(prev => ({ ...prev, businessLicenseImage: null }))}
+                      >
+                        <CloseIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  )}
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
                     label="전화번호"
-                    name="phoneNumber"
+            name="phoneNumber"
                     value={companyData.phoneNumber}
-                    onChange={handleChange}
+            onChange={handleChange}
                     size="small"
-                  />
+          />
                 </Grid>
-
+          
                 <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
+          <TextField
+            fullWidth
                     label="팩스번호"
-                    name="faxNumber"
+            name="faxNumber"
                     value={companyData.faxNumber}
                     onChange={handleChange}
                     size="small"
                   />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Typography variant="subtitle1" sx={{ 
+                    fontWeight: 500,
+                    color: '#343959',
+                    mb: 2
+                  }}>
+                    직원 정보
+                  </Typography>
+                  
+                  {employees.map((employee, index) => (
+                    <Box 
+                      key={index} 
+                      sx={{ 
+                        display: 'flex', 
+                        gap: 2,
+                        mb: 2,
+                        alignItems: 'center' 
+                      }}
+                    >
+                      <TextField
+                        size="small"
+                        label="이름"
+                        value={employee.name}
+                        onChange={(e) => handleEmployeeChange(index, 'name', e.target.value)}
+                        sx={{ width: '30%' }}
+                      />
+                      <TextField
+                        size="small"
+                        label="핸드폰번호"
+                        value={employee.phoneNumber}
+                        onChange={(e) => handleEmployeeChange(index, 'phoneNumber', e.target.value)}
+                        sx={{ width: '60%' }}
+                      />
+                      <Box sx={{ width: '40px', display: 'flex', justifyContent: 'center' }}>
+                        {index > 0 ? (
+                          <IconButton 
+                            onClick={() => handleRemoveEmployee(index)}
+                            size="small"
+                            sx={{ 
+                              color: '#666',
+                              '&:hover': { color: '#ff4444' }
+                            }}
+                          >
+                            <RemoveIcon />
+                          </IconButton>
+                        ) : null}
+                      </Box>
+                    </Box>
+                  ))}
+                  
+                  <Button
+                    startIcon={<AddIcon />}
+                    onClick={handleAddEmployee}
+                    variant="outlined"
+                    size="small"
+                    sx={{ 
+                      mt: 1,
+                      color: '#343959',
+                      borderColor: '#343959',
+                      '&:hover': {
+                        borderColor: '#3d63b8',
+                        color: '#3d63b8',
+                        bgcolor: 'rgba(61, 99, 184, 0.04)'
+                      }
+                    }}
+                  >
+                    직원 추가
+                  </Button>
                 </Grid>
 
                 <Grid item xs={12}>
@@ -680,7 +792,7 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
                       label="상세주소"
                       name="detailAddress"
                       value={companyData.detailAddress}
-                      onChange={handleChange}
+            onChange={handleChange}
                       size="small"
                       placeholder="상세주소를 입력하세요"
                     />
@@ -699,17 +811,17 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
                 </Grid>
 
                 <Grid item xs={12}>
-                  <TextField
-                    fullWidth
+          <TextField
+            fullWidth
                     multiline
                     rows={3}
                     label="메모"
-                    name="notes"
+            name="notes"
                     value={companyData.notes}
-                    onChange={handleChange}
+            onChange={handleChange}
                     size="small"
-                    sx={{ mb: 2 }}
-                  />
+            sx={{ mb: 2 }}
+          />
                 </Grid>
               </Grid>
             </Box>
@@ -1170,7 +1282,7 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
                             대
                           </Typography>
                         </Box>
-                      </Box>
+        </Box>
                     </Grid>
                   </Grid>
                 </LocalizationProvider>
@@ -1181,7 +1293,7 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
               {activeStep === 2 && <ImageUploadStep />}
             </>
           )}
-        </DialogContent>
+      </DialogContent>
 
         <DialogActions sx={{ 
           p: 2,
@@ -1205,9 +1317,9 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
         }}>
           {!showBuildingInfo ? (
             <>
-              <Button 
+        <Button 
                 onClick={handleClose}
-                variant="outlined"
+          variant="outlined"
                 sx={{ 
                   color: '#343959',
                   borderColor: '#343959',
@@ -1217,9 +1329,9 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
                     bgcolor: 'rgba(61, 99, 184, 0.04)'
                   }
                 }}
-              >
-                취소
-              </Button>
+        >
+          취소
+        </Button>
               <Button
                 onClick={() => setShowBuildingInfo(true)}
                 variant="outlined"
@@ -1234,21 +1346,21 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
                 }}
               >
                 추가정보 입력
-              </Button>
-              <Button 
-                onClick={handleSubmit}
-                variant="contained"
-                sx={{ 
+        </Button>
+        <Button 
+          onClick={handleSubmit}
+          variant="contained"
+          sx={{
                   bgcolor: '#343959',
-                  '&:hover': { 
-                    bgcolor: '#3d63b8'
+            '&:hover': {
+              bgcolor: '#3d63b8'
                   },
                   boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                   fontWeight: 500
-                }}
-              >
-                저장
-              </Button>
+          }}
+        >
+          저장
+        </Button>
             </>
           ) : (
             <>
@@ -1317,8 +1429,8 @@ const CompanyDialog = ({ open, onClose, onSubmit }) => {
               )}
             </>
           )}
-        </DialogActions>
-      </Dialog>
+      </DialogActions>
+    </Dialog>
 
       <Snackbar
         open={snackbar.open}

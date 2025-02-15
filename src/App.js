@@ -13,6 +13,8 @@ import { StyledEngineProvider } from '@mui/material/styles';
 import ScheduleManagement from './pages/ScheduleManagement';
 import FireSafetyInspectionForm from './components/fireSafetyInspection/FireSafetyInspectionForm';
 import ServicePreparingPage from './components/common/ServicePreparingPage';
+import ProtectedRoute from './components/common/ProtectedRoute';
+import AdminInquiryList from './components/inquiry/AdminInquiryList';
 
 // 지연 로딩할 컴포넌트들
 const Settings = React.lazy(() => import('./components/settings/Settings'));
@@ -40,6 +42,8 @@ const FireInspectionTutorial = React.lazy(() => import('./components/tutorial/Fi
 const InquiryTutorial = React.lazy(() => import('./components/tutorial/InquiryTutorial'));
 const PdfTutorial = React.lazy(() => import('./components/tutorial/PdfTutorial'));
 const InspectionResultTransmissionTutorial = React.lazy(() => import('./components/tutorial/InspectionResultTransmissionTutorial'));
+const KakaoAlertList = React.lazy(() => import('./components/alert/KakaoAlertList'));
+const GuestInquiryList = React.lazy(() => import('./components/inquiry/GuestInquiryList'));
 
 // 로딩 컴포넌트
 const LoadingFallback = () => (
@@ -105,6 +109,16 @@ function App() {
                   <Route path="/tutorial/inquiry" element={<InquiryTutorial />} />
                   <Route path="/tutorial/pdf" element={<PdfTutorial />} />
                   <Route path="/tutorial/send-results" element={<InspectionResultTransmissionTutorial />} />
+                  <Route path="/kakao-alert-list" element={<KakaoAlertList />} />
+                  <Route path="/guest-inquiries" element={<GuestInquiryList />} />
+                  <Route 
+                    path="/admin/inquiries" 
+                    element={
+                      <ProtectedRoute roleRequired="ADMIN">
+                        <AdminInquiryList />
+                      </ProtectedRoute>
+                    } 
+                  />
                 </Routes>
               </Suspense>
             </Box>

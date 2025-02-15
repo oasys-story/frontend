@@ -20,7 +20,12 @@ import {
   Tab,
   Accordion,
   AccordionSummary,
-  AccordionDetails
+  AccordionDetails,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Divider
 } from '@mui/material';
 import SignatureDialog from './SignatureDialog';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
@@ -28,6 +33,7 @@ import { PDFDownloadLink } from '@react-pdf/renderer';
 import InspectionPDF from './InspectionPdf';
 import ShareIcon from '@mui/icons-material/Share';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import CheckIcon from '@mui/icons-material/Check';
 
 const InspectionResult = () => {
   const { id } = useParams();
@@ -42,6 +48,8 @@ const InspectionResult = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [sending, setSending] = useState(false);
   const [selectedTab, setSelectedTab] = useState(0);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [employees, setEmployees] = useState([]);
 
   const checklistLabels = {
 
@@ -356,6 +364,30 @@ const InspectionResult = () => {
     );
   };
 
+  // 직원 목록 조회 함수
+  const fetchEmployees = async () => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/companies/${data?.companyId}/employees`, {
+        headers: {
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setEmployees(data.filter(emp => emp.active));
+      }
+    } catch (error) {
+      console.error('직원 정보 조회 실패:', error);
+    }
+  };
+
+  // SMS 다이얼로그가 열릴 때 직원 목록 조회
+  useEffect(() => {
+    if (smsDialogOpen && data?.companyId) {
+      fetchEmployees();
+    }
+  }, [smsDialogOpen, data?.companyId]);
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -403,7 +435,6 @@ const InspectionResult = () => {
   
   // 수정/삭제 권한 체크
   const hasPermission = isAdmin || (data?.userId === parseInt(currentUserId));
-
 
   return (
     <Box sx={{ 
@@ -704,29 +735,24 @@ const InspectionResult = () => {
                 />
               ) : (
                 <Box
-                  onClick={() => 
-                    sessionStorage.getItem('role') === 'USER' 
-                      ? setSignatureDialogOpen(true) 
-                      : alert('점검대상업체만 서명할 수 있습니다.')
-                  }
+                  onClick={() => setSignatureDialogOpen(true)}
                   sx={{ 
                     width: '100%', 
                     height: '100px', 
-                    border: '1px dashed #1C243A',
+                    border: '1px dashed #343959',
                     borderRadius: 1,
                     mt: 1,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    cursor: sessionStorage.getItem('role') === 'USER' ? 'pointer' : 'not-allowed',
-                    opacity: sessionStorage.getItem('role') === 'USER' ? 1 : 0.6,
+                    cursor: 'pointer',
                     '&:hover': {
-                      bgcolor: sessionStorage.getItem('role') === 'USER' ? 'rgba(28, 36, 58, 0.04)' : undefined
+                      bgcolor: 'rgba(52, 57, 89, 0.04)'
                     }
                   }}
                 >
                   <Typography color="primary">
-                    {sessionStorage.getItem('role') === 'USER' ? '서명하기' : '점검대상업체 전용'}
+                    서명하기
                   </Typography>
                 </Box>
               )}
@@ -837,13 +863,81 @@ const InspectionResult = () => {
 
       {/* SMS 다이얼로그 */}
       <Dialog open={smsDialogOpen} onClose={() => !sending && setSmsDialogOpen(false)}>
-        <DialogTitle>점검 결과 알림톡 전송</DialogTitle>
+        <DialogTitle sx={{ 
+          bgcolor: '#f8f9fa',
+          p: 2.5,
+          borderBottom: '1px solid #eee',
+          textAlign: 'center',
+          position: 'relative'
+        }}>
+          <Typography variant="h6" sx={{ fontWeight: 500, color: '#343959' }}>
+            점검 결과 알림톡 전송
+          </Typography>
+        </DialogTitle>
         <DialogContent>
-          <Box sx={{ mt: 1 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              {data?.phoneNumber ? 
-                '저장된 전화번호로 점검 결과가 전송됩니다.' : 
-                '전화번호를 입력하여 점검 결과를 전송할 수 있습니다.'}
+          <Box sx={{ mt: 2 }}>
+            {/* 직원 선택 Select */}
+            <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+              <InputLabel id="employee-select-label">전송할 직원 선택</InputLabel>
+              <Select
+                labelId="employee-select-label"
+                value={selectedEmployee ? selectedEmployee.employeeId : ''}
+                onChange={(e) => {
+                  const selected = employees.find(emp => emp.employeeId === e.target.value);
+                  setSelectedEmployee(selected);
+                  setPhoneNumber(selected ? selected.phone : '');
+                }}
+                label="전송할 직원 선택"
+                sx={{
+                  bgcolor: '#f8f9fa',
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#e0e0e0'
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#343959'
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#343959'
+                  }
+                }}
+              >
+                <MenuItem value="" sx={{ color: '#666' }}>
+                  <em>직원 선택</em>
+                </MenuItem>
+                {employees.map((employee) => (
+                  <MenuItem 
+                    key={employee.employeeId} 
+                    value={employee.employeeId}
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      gap: 1
+                    }}
+                  >
+                    <Typography>{employee.name}</Typography>
+                    <Typography color="text.secondary" variant="body2">
+                      {employee.phone}
+                    </Typography>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* 구분선 */}
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center',
+              my: 2,
+              color: '#666'
+            }}>
+              <Divider sx={{ flex: 1 }} />
+              <Typography variant="body2" sx={{ mx: 1 }}>또는</Typography>
+              <Divider sx={{ flex: 1 }} />
+            </Box>
+
+            {/* 직접 입력 */}
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+              직접 입력
             </Typography>
             <TextField
               margin="dense"
@@ -855,14 +949,20 @@ const InspectionResult = () => {
               disabled={sending}
               placeholder="010-0000-0000"
               helperText="'-' 없이 입력해주세요."
+              size="small"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: '#f8f9fa'
+                }
+              }}
             />
           </Box>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ p: 2, borderTop: '1px solid #eee' }}>
           <Button 
             onClick={() => setSmsDialogOpen(false)} 
             disabled={sending}
-            size="small"
+            sx={{ color: '#666' }}
           >
             취소
           </Button>
@@ -870,9 +970,8 @@ const InspectionResult = () => {
             onClick={handleSendSMS} 
             variant="contained"
             disabled={sending || !phoneNumber}
-            size="small"
             sx={{ 
-              bgcolor: '#1C243A',
+              bgcolor: '#343959',
               '&:hover': { bgcolor: '#3d63b8' }
             }}
           >
