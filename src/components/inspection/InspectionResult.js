@@ -29,11 +29,12 @@ import {
 } from '@mui/material';
 import SignatureDialog from './SignatureDialog';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import { PDFDownloadLink } from '@react-pdf/renderer';
+import { PDFDownloadLink, pdf } from '@react-pdf/renderer';
 import InspectionPDF from './InspectionPdf';
 import ShareIcon from '@mui/icons-material/Share';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CheckIcon from '@mui/icons-material/Check';
+import EmailIcon from '@mui/icons-material/Email';
 
 const InspectionResult = () => {
   const { id } = useParams();
@@ -50,6 +51,9 @@ const InspectionResult = () => {
   const [selectedTab, setSelectedTab] = useState(0);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [employees, setEmployees] = useState([]);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [email, setEmail] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   const checklistLabels = {
 
@@ -387,6 +391,62 @@ const InspectionResult = () => {
       fetchEmployees();
     }
   }, [smsDialogOpen, data?.companyId]);
+
+  // PDF Blob 생성 함수 추가
+  const generatePdfBlob = async () => {
+    const pdfDoc = <InspectionPDF 
+      data={data} 
+      checklistLabels={checklistLabels}
+      getStatusText={getStatusText}
+    />;
+    const blob = await pdf(pdfDoc).toBlob();
+    return blob;
+  };
+
+  // 이메일 전송 함수 추가
+  const handleSendEmail = async () => {
+    if (!email) {
+      alert('이메일 주소를 입력해주세요.');
+      return;
+    }
+
+    setSendingEmail(true);
+    try {
+      const pdfBlob = await generatePdfBlob();
+      
+      const formData = new FormData();
+      formData.append('to', email);
+      formData.append('subject', `[전기점검결과] ${data.companyName}`);
+      formData.append('content', `
+        점검일자: ${new Date(data.inspectionDate).toLocaleDateString()}
+        건물명: ${data.companyName}
+        주소: ${data.managerName}
+        점검결과: 자세한 내용은 첨부된 PDF를 확인해주세요.
+      `);
+      formData.append('attachment', pdfBlob, `${data.companyName}_전기점검결과.pdf`);
+
+      const response = await fetch('http://localhost:8080/api/email/send-with-attachment', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        alert('이메일이 성공적으로 전송되었습니다.');
+        setEmailDialogOpen(false);
+        setEmail('');  // 이메일 입력 초기화
+      } else {
+        throw new Error('이메일 전송에 실패했습니다.');
+      }
+    } catch (error) {
+      alert('이메일 전송 중 오류가 발생했습니다.');
+      console.error('이메일 전송 오류:', error);
+    } finally {
+      setSendingEmail(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -760,8 +820,15 @@ const InspectionResult = () => {
           </Grid>
         </Paper>
 
-        {/* PDF 다운로드 버튼 */}
-        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+        {/* PDF 다운로드, 문자 전송, 이메일 전송 버튼 */}
+        <Box sx={{ 
+          mt: 3, 
+          mb: 10,
+          display: 'flex', 
+          gap: 1,  // 간격을 더 줄임
+          justifyContent: 'center',
+          px: 2
+        }}>
           <PDFDownloadLink 
             document={
               <InspectionPDF 
@@ -770,34 +837,92 @@ const InspectionResult = () => {
                 getStatusText={getStatusText}
               />
             } 
-            fileName={`inspection_${id}.pdf`}
+            fileName={`${data.companyName}_전기점검결과.pdf`}
             style={{ textDecoration: 'none' }}
           >
-            {({ blob, url, loading, error }) => 
-              loading ? (
-                <Button
-                  variant="contained"
-                  disabled
-                  startIcon={<CircularProgress size={20} />}
-                  sx={{ minWidth: '200px' }}
-                >
-                  PDF 생성중...
-                </Button>
-              ) : (
-                <Button
-                  variant="contained"
-                  startIcon={<PictureAsPdfIcon />}
-                  sx={{ 
-                    minWidth: '200px',
-                    bgcolor: '#1C243A',
-                    '&:hover': { bgcolor: '#3d63b8' }
-                  }}
-                >
-                  PDF 다운로드
-                </Button>
-              )
-            }
+            {({ loading }) => (
+              <Button
+                variant="outlined"
+                startIcon={<PictureAsPdfIcon />}
+                disabled={loading}
+                size="small"
+                sx={{ 
+                  borderColor: '#343959',
+                  color: '#343959',
+                  minWidth: '90px',  // 너비 더 축소
+                  fontSize: '0.8rem',  // 글씨 크기 더 축소
+                  py: 0.5,  // 상하 패딩 축소
+                  '& .MuiButton-startIcon': {  // 아이콘 크기 조정
+                    marginRight: 0.5,
+                    '& > *:first-of-type': {
+                      fontSize: '1.1rem'
+                    }
+                  },
+                  '&:hover': {
+                    borderColor: '#3d63b8',
+                    color: '#3d63b8',
+                    bgcolor: 'rgba(61, 99, 184, 0.04)'
+                  }
+                }}
+              >
+                PDF
+              </Button>
+            )}
           </PDFDownloadLink>
+
+          <Button
+            onClick={() => setSmsDialogOpen(true)}
+            startIcon={<ShareIcon />}
+            variant="outlined"
+            size="small"
+            sx={{ 
+              borderColor: '#343959',
+              color: '#343959',
+              minWidth: '90px',
+              fontSize: '0.8rem',
+              py: 0.5,
+              '& .MuiButton-startIcon': {
+                marginRight: 0.5,
+                '& > *:first-of-type': {
+                  fontSize: '1.1rem'
+                }
+              },
+              '&:hover': {
+                borderColor: '#3d63b8',
+                color: '#3d63b8',
+                bgcolor: 'rgba(61, 99, 184, 0.04)'
+              }
+            }}
+          >
+            문자
+          </Button>
+
+          <Button
+            onClick={() => setEmailDialogOpen(true)}
+            startIcon={<EmailIcon />}
+            variant="outlined"
+            size="small"
+            sx={{ 
+              borderColor: '#343959',
+              color: '#343959',
+              minWidth: '90px',
+              fontSize: '0.8rem',
+              py: 0.5,
+              '& .MuiButton-startIcon': {
+                marginRight: 0.5,
+                '& > *:first-of-type': {
+                  fontSize: '1.1rem'
+                }
+              },
+              '&:hover': {
+                borderColor: '#3d63b8',
+                color: '#3d63b8',
+                bgcolor: 'rgba(61, 99, 184, 0.04)'
+              }
+            }}
+          >
+            이메일
+          </Button>
         </Box>
       </Box>
 
@@ -814,14 +939,6 @@ const InspectionResult = () => {
         gap: 1,
         justifyContent: 'center'
       }}>
-        <Button
-          variant="outlined"
-          startIcon={<ShareIcon />}
-          onClick={() => setSmsDialogOpen(true)}
-          sx={{ minWidth: '100px' }}
-        >
-          알림톡 전송
-        </Button>
         <Button
           variant="outlined"
           onClick={() => navigate('/inspections')}
@@ -1007,6 +1124,49 @@ const InspectionResult = () => {
             />
           )}
         </DialogContent>
+      </Dialog>
+
+      {/* 이메일 전송 다이얼로그 추가 */}
+      <Dialog
+        open={emailDialogOpen}
+        onClose={() => setEmailDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>이메일 전송</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            점검 결과를 전송할 이메일 주소를 입력해주세요.
+          </DialogContentText>
+          <TextField
+            fullWidth
+            label="이메일 주소"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={sendingEmail}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2, borderTop: '1px solid #eee' }}>
+          <Button 
+            onClick={() => setEmailDialogOpen(false)} 
+            disabled={sendingEmail}
+            sx={{ color: '#666' }}
+          >
+            취소
+          </Button>
+          <Button 
+            onClick={handleSendEmail} 
+            variant="contained"
+            disabled={sendingEmail}
+            sx={{ 
+              bgcolor: '#343959',
+              '&:hover': { bgcolor: '#3d63b8' }
+            }}
+          >
+            {sendingEmail ? '전송중...' : '전송'}
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );

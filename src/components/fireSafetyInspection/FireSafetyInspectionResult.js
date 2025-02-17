@@ -17,12 +17,14 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  DialogContentText,
 } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import { PDFDownloadLink } from '@react-pdf/renderer';
+import { PDFDownloadLink, pdf } from '@react-pdf/renderer';
 import FireSafetyInspectionPDF from './FireSafetyInspectionPDF';
 import SignatureDialog from '../inspection/SignatureDialog';
 import ShareIcon from '@mui/icons-material/Share';
+import EmailIcon from '@mui/icons-material/Email';
 
 const FireSafetyInspectionResult = () => {
   const { id } = useParams();
@@ -39,6 +41,9 @@ const FireSafetyInspectionResult = () => {
   const [currentUserId, setCurrentUserId] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [employees, setEmployees] = useState([]);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [email, setEmail] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   useEffect(() => {
     const initialize = async () => {
@@ -60,7 +65,6 @@ const FireSafetyInspectionResult = () => {
         setIsAdmin(userData.role === 'ADMIN');
       }
     } catch (error) {
-      console.error('권한 체크 실패:', error);
       setHasPermission(false);
     }
   };
@@ -86,10 +90,8 @@ const FireSafetyInspectionResult = () => {
                             data.writerId === currentUser.userId;
         setHasPermission(hasPermission);
       } else {
-        console.error('데이터 로딩 실패');
       }
     } catch (error) {
-      console.error('Error:', error);
     } finally {
       setLoading(false);
     }
@@ -121,7 +123,6 @@ const FireSafetyInspectionResult = () => {
           navigate('/fire-safety-inspections');
         }
       } catch (error) {
-        console.error('삭제 실패:', error);
       }
     }
   };
@@ -151,7 +152,6 @@ const FireSafetyInspectionResult = () => {
         alert('서명 저장에 실패했습니다.');
       }
     } catch (error) {
-      console.error('서명 저장 실패:', error);
       alert('서명 저장 중 오류가 발생했습니다.');
     }
   };
@@ -185,7 +185,6 @@ const FireSafetyInspectionResult = () => {
         throw new Error(error);
       }
     } catch (error) {
-      console.error('SMS 전송 실패:', error);
       alert('문자 전송에 실패했습니다.');
     } finally {
       setSending(false);
@@ -204,7 +203,6 @@ const FireSafetyInspectionResult = () => {
         setEmployees(data.filter(emp => emp.active));
       }
     } catch (error) {
-      console.error('직원 정보 조회 실패:', error);
     }
   };
 
@@ -213,6 +211,57 @@ const FireSafetyInspectionResult = () => {
       fetchEmployees();
     }
   }, [smsDialogOpen, inspection?.companyId]);
+
+  const generatePdfBlob = async () => {
+    const pdfDoc = <FireSafetyInspectionPDF inspection={inspection} />;
+    const blob = await pdf(pdfDoc).toBlob();
+    return blob;
+  };
+
+  const handleSendEmail = async () => {
+    if (!email) {
+      alert('이메일 주소를 입력해주세요.');
+      return;
+    }
+
+    setSendingEmail(true);
+    try {
+      // PDF 생성
+      const pdfBlob = await generatePdfBlob();
+      
+      // FormData 생성
+      const formData = new FormData();
+      formData.append('to', email);
+      formData.append('subject', `[소방점검결과] ${inspection.buildingName}`);
+      formData.append('content', `
+        점검일자: ${new Date(inspection.inspectionDate).toLocaleDateString()}
+        건물명: ${inspection.buildingName}
+        주소: ${inspection.address}
+        점검결과: 자세한 내용은 첨부된 PDF를 확인해주세요.
+      `);
+      formData.append('attachment', pdfBlob, `${inspection.buildingName}_소방점검결과.pdf`);
+
+      const response = await fetch('http://localhost:8080/api/email/send-with-attachment', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        alert('이메일이 성공적으로 전송되었습니다.');
+        setEmailDialogOpen(false);
+      } else {
+        throw new Error('이메일 전송에 실패했습니다.');
+      }
+    } catch (error) {
+      alert('이메일 전송 중 오류가 발생했습니다.');
+
+    } finally {
+      setSendingEmail(false);
+    }
+  };
 
   if (loading) {
     return <Box sx={{ p: 3 }}>로딩 중...</Box>;
@@ -423,37 +472,98 @@ const FireSafetyInspectionResult = () => {
           </Grid>
         </Paper>
 
-        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+        <Box sx={{ 
+          mt: 3, 
+          mb: 10,  // 하단 고정 버튼과 겹치지 않도록 마진 추가
+          display: 'flex', 
+          gap: 2, 
+          justifyContent: 'center' 
+        }}>
           <PDFDownloadLink 
             document={<FireSafetyInspectionPDF inspection={inspection} />}
-            fileName={`fire_safety_inspection_${id}.pdf`}
+            fileName={`${inspection.buildingName}_소방점검결과.pdf`}
             style={{ textDecoration: 'none' }}
           >
-            {({ loading: pdfLoading }) => 
-              pdfLoading ? (
-                <Button
-                  variant="contained"
-                  disabled
-                  startIcon={<CircularProgress size={20} />}
-                  sx={{ minWidth: '200px' }}
-                >
-                  PDF 생성중...
-                </Button>
-              ) : (
-                <Button
-                  variant="contained"
-                  startIcon={<PictureAsPdfIcon />}
-                  sx={{ 
-                    minWidth: '200px',
-                    bgcolor: '#1C243A',
-                    '&:hover': { bgcolor: '#3d63b8' }
-                  }}
-                >
-                  PDF 다운로드
-                </Button>
-              )
-            }
+            {({ loading }) => (
+              <Button
+                variant="outlined"
+                startIcon={<PictureAsPdfIcon />}
+                disabled={loading}
+                sx={{ 
+                  borderColor: '#343959',
+                  color: '#343959',
+                  minWidth: '90px',
+                  fontSize: '0.8rem',
+                  py: 0.5,
+                  '& .MuiButton-startIcon': {
+                    marginRight: 0.5,
+                    '& > *:first-of-type': {
+                      fontSize: '1.1rem'
+                    }
+                  },
+                  '&:hover': {
+                    borderColor: '#3d63b8',
+                    color: '#3d63b8',
+                    bgcolor: 'rgba(61, 99, 184, 0.04)'
+                  }
+                }}
+              >
+                PDF
+              </Button>
+            )}
           </PDFDownloadLink>
+
+          <Button
+            onClick={() => setSmsDialogOpen(true)}
+            startIcon={<ShareIcon />}
+            variant="outlined"
+            sx={{ 
+              borderColor: '#343959',
+              color: '#343959',
+              minWidth: '90px',
+              fontSize: '0.8rem',
+              py: 0.5,
+              '& .MuiButton-startIcon': {
+                marginRight: 0.5,
+                '& > *:first-of-type': {
+                  fontSize: '1.1rem'
+                }
+              },
+              '&:hover': {
+                borderColor: '#3d63b8',
+                color: '#3d63b8',
+                bgcolor: 'rgba(61, 99, 184, 0.04)'
+              }
+            }}
+          >
+            문자
+          </Button>
+
+          <Button
+            onClick={() => setEmailDialogOpen(true)}
+            startIcon={<EmailIcon />}
+            variant="outlined"
+            sx={{ 
+              borderColor: '#343959',
+              color: '#343959',
+              minWidth: '90px',
+              fontSize: '0.8rem',
+              py: 0.5,
+              '& .MuiButton-startIcon': {
+                marginRight: 0.5,
+                '& > *:first-of-type': {
+                  fontSize: '1.1rem'
+                }
+              },
+              '&:hover': {
+                borderColor: '#3d63b8',
+                color: '#3d63b8',
+                bgcolor: 'rgba(61, 99, 184, 0.04)'
+              }
+            }}
+          >
+            이메일
+          </Button>
         </Box>
       </Box>
 
@@ -471,48 +581,23 @@ const FireSafetyInspectionResult = () => {
       }}>
         <Button
           variant="outlined"
-          startIcon={<ShareIcon />}
-          onClick={() => setSmsDialogOpen(true)}
-          sx={{ minWidth: '100px' }}
-        >
-          공유하기
-        </Button>
-        <Button
-          variant="outlined"
           onClick={() => navigate('/fire-safety-inspections')}
           sx={{ minWidth: '100px' }}
         >
           목록
         </Button>
         {hasPermission && (
-          <>
-            <Button
-              variant="contained"
-              onClick={() => navigate(`/fire-safety-inspection/edit/${inspection.fireInspectionId}`)}
-              sx={{ 
-                minWidth: '100px',
-                bgcolor: '#1C243A',
-                '&:hover': { bgcolor: '#3d63b8' }
-              }}
-            >
-              수정
-            </Button>
-            {/* <Button
-              variant="outlined"
-              onClick={handleDelete}
-              sx={{ 
-                minWidth: '100px',
-                color: 'error.main',
-                borderColor: 'error.main',
-                '&:hover': {
-                  backgroundColor: 'error.light',
-                  color: 'white'
-                }
-              }}
-            >
-              삭제
-            </Button> */}
-          </>
+          <Button
+            variant="contained"
+            onClick={() => navigate(`/fire-safety-inspection/edit/${inspection.fireInspectionId}`)}
+            sx={{ 
+              minWidth: '100px',
+              bgcolor: '#1C243A',
+              '&:hover': { bgcolor: '#3d63b8' }
+            }}
+          >
+            수정
+          </Button>
         )}
       </Box>
 
@@ -541,7 +626,6 @@ const FireSafetyInspectionResult = () => {
                 borderRadius: '4px'
               }}
               onError={(e) => {
-                console.error('Failed to load large image:', selectedImage);
                 e.target.src = '/placeholder-image.png';
               }}
             />
@@ -666,6 +750,48 @@ const FireSafetyInspectionResult = () => {
             }}
           >
             {sending ? '전송중...' : '전송'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={emailDialogOpen}
+        onClose={() => setEmailDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>이메일 전송</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            점검 결과를 전송할 이메일 주소를 입력해주세요.
+          </DialogContentText>
+          <TextField
+            fullWidth
+            label="이메일 주소"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={sendingEmail}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2, borderTop: '1px solid #eee' }}>
+          <Button 
+            onClick={() => setEmailDialogOpen(false)} 
+            disabled={sendingEmail}
+            sx={{ color: '#666' }}
+          >
+            취소
+          </Button>
+          <Button 
+            onClick={handleSendEmail} 
+            variant="contained"
+            disabled={sendingEmail}
+            sx={{ 
+              bgcolor: '#343959',
+              '&:hover': { bgcolor: '#3d63b8' }
+            }}
+          >
+            {sendingEmail ? '전송중...' : '전송'}
           </Button>
         </DialogActions>
       </Dialog>
