@@ -281,6 +281,22 @@ const InspectionForm = ({ isEdit = false, initialData = null, inspectionId = nul
     fetchCompanies();
   }, []);  // 컴포넌트 마운트 시 한 번만 실행
 
+  // 첫 번째 스텝에서 토큰 체크를 위한 useEffect 추가
+  useEffect(() => {
+    if (activeStep === 0) {
+      const checkToken = setInterval(() => {
+        const token = sessionStorage.getItem('token');
+        if (!token) {
+          alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+          navigate('/');
+          clearInterval(checkToken);
+        }
+      }, 1000); // 1초마다 체크
+
+      return () => clearInterval(checkToken);
+    }
+  }, [activeStep, navigate]);
+
   const handleNext = () => {
     // 기본 정보 단계에서만 유효성 검사 실행
     if (activeStep === 0) {

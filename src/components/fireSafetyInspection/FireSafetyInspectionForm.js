@@ -163,6 +163,22 @@ const FireSafetyInspectionForm = () => {
     fetchInitialData();
   }, []);
 
+  // 첫 번째 스텝에서 토큰 체크를 위한 useEffect 추가
+  useEffect(() => {
+    if (activeStep === 0) {
+      const checkToken = setInterval(() => {
+        const token = sessionStorage.getItem('token');
+        if (!token) {
+          alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+          navigate('/');
+          clearInterval(checkToken);
+        }
+      }, 1000); // 1초마다 체크
+
+      return () => clearInterval(checkToken);
+    }
+  }, [activeStep, navigate]);
+
   // 단계별 제목
   const steps = ['기본 정보', '점검 상태', '이미지 첨부'];
 
@@ -439,18 +455,41 @@ const FireSafetyInspectionForm = () => {
             </LocalizationProvider>
 
             <FormControl fullWidth margin="normal">
-              <InputLabel>회사 선택</InputLabel>
-              <Select
-                value={formData.companyId || ''}
-                onChange={handleCompanyChange}
-                label="회사 선택"
-              >
-                {companies.map((company) => (
-                  <MenuItem key={company.companyId} value={company.companyId}>
-                    {company.companyName}
-                  </MenuItem>
-                ))}
-              </Select>
+              <Autocomplete
+                value={companies.find(company => company.companyId === formData.companyId) || null}
+                onChange={(event, newValue) => {
+                  handleCompanyChange({
+                    target: { 
+                      value: newValue ? newValue.companyId : '' 
+                    }
+                  });
+                }}
+                options={companies}
+                getOptionLabel={(option) => option.companyName}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="업체 선택"
+                    required
+                    InputProps={{
+                      ...params.InputProps,
+                      startAdornment: (
+                        <>
+                          <InputAdornment position="start">
+                            <SearchIcon />
+                          </InputAdornment>
+                          {params.InputProps.startAdornment}
+                        </>
+                      )
+                    }}
+                  />
+                )}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    padding: '3px'
+                  }
+                }}
+              />
             </FormControl>
 
             <TextField
