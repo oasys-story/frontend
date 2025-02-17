@@ -22,24 +22,42 @@ Font.register({
 // PDF 스타일 정의
 const styles = StyleSheet.create({
   page: {
-    padding: 30,
+    padding: 20,
     backgroundColor: 'white',
-    fontFamily: 'Pretendard',  // 기본 폰트 설정
+    fontFamily: 'Pretendard',
+    position: 'relative', // 로고 배치 위한 설정
+  },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logo: {
+    width: 80,
+    height: 30,
+  },
+  companyInfo: {
+    fontSize: 8,
+    marginLeft: 10,
+  },
+  signatureTable: {
+    border: 1,
+    borderColor: '#000',
+    width: 200,
   },
   header: {
-    fontSize: 16,
+    fontSize: 14,
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 8,
     borderBottom: 1,
     paddingBottom: 10,
     fontFamily: 'Pretendard',
     fontWeight: 700,  // 볼드 처리
   },
   section: {
-    marginBottom: 15,
+    marginBottom: 8,
   },
   title: {
-    fontSize: 12,
+    fontSize: 10,
     backgroundColor: '#1C243A',
     color: 'white',
     padding: 5,
@@ -49,38 +67,48 @@ const styles = StyleSheet.create({
   },
   topSection: {
     flexDirection: 'row',
-    marginBottom: 20,
+    marginBottom: 10,
     borderBottom: 1,
     borderColor: '#000000',
     paddingBottom: 10,
     alignItems: 'center'
   },
   topLeftSection: {
-    width: '60%'
+    width: '50%' // 점검자 제거 후 너비 조정
   },
-  topRightSection: {
-    width: '40%',
-    paddingLeft: 10
+  approvalTable: {
+    width: '50%',
+    border: 1,
+    borderColor: '#000',
   },
-  signatureSection: {
+  approvalRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 20,
   },
-  signatureContainer: {
-    alignItems: 'center'
-  },
-  signatureLabel: {
-    fontSize: 8,
-    marginBottom: 2
+  approvalCell: {
+    flex: 1,
+    borderRight: 1,
+    borderBottom: 1,
+    borderColor: '#000',
+    textAlign: 'center',
+    fontSize: 10,
+    paddingVertical: 3,
   },
   signatureBox: {
-    border: 1,
-    borderColor: '#1C243A',
-    width: 100,
-    height: 50,
-    padding: 2,
-    backgroundColor: '#f8f8f8'
+    flex: 1,
+    height: 20,
+    borderRight: 1,
+    borderBottom: 1,
+    borderColor: '#000',
+    backgroundColor: '#f8f8f8',
+  },
+  signatureBoxBottom: {
+    flex: 1,
+    height: 20,
+    borderRight: 0,
+    borderBottom: 0,
+    borderColor: '#000',
+    backgroundColor: '#f8f8f8',
+
   },
   infoRow: {
     flexDirection: 'row',
@@ -88,7 +116,7 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     width: '25%',
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: 'Pretendard',
   },
   infoValue: {
@@ -117,8 +145,8 @@ const styles = StyleSheet.create({
   },
   tableCell: {
     flex: 1,
-    padding: 5,
-    fontSize: 10,
+    padding: 3,
+    fontSize: 8,
     textAlign: 'center',
   },
   tableCellWithBorder: {
@@ -198,15 +226,30 @@ const styles = StyleSheet.create({
     left: 0,
     fontSize: 8,
   },
-  imageGrid: {
+  imagesContainer: {
+    marginTop: 10,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10
+    gap: 0,
+  },
+  imageWrapper: {
+    width: '50%',  // 레이아웃은 50:50 유지
+    padding: 5,
+    height: 200,   // 이미지 컨테이너 높이 고정
+    display: 'flex',
+    alignItems: 'center',  // 이미지 가운데 정렬
+    justifyContent: 'center',
   },
   image: {
-    width: 150,
-    height: 150,
-    objectFit: 'contain'
+    maxWidth: '100%',
+    maxHeight: '100%',
+    objectFit: 'contain',  // 'cover' 대신 'contain' 사용하여 비율 유지
+  },
+  imageCaption: {
+    fontSize: 10,
+    textAlign: 'center',
+    marginTop: 4,
+    color: '#666',
   },
   signature: {
     width: 150,
@@ -214,8 +257,24 @@ const styles = StyleSheet.create({
   },
   signatureRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10
+  },
+  signatureCell: {
+    flex: 1,
+    borderRight: 1,
+    borderBottom: 1,
+    borderColor: '#000',
+    textAlign: 'center',
+    fontSize: 9,
+    paddingVertical: 3,
+  },
+    signatureCellRight: {
+    flex: 1,
+    borderRight: 0,
+    borderBottom: 1,
+    borderColor: '#000',
+    textAlign: 'center',
+    fontSize: 9,
+    paddingVertical: 3,
   },
   checklistTable: {
     width: '100%',
@@ -225,7 +284,7 @@ const styles = StyleSheet.create({
   },
   checklistRow: {
     flexDirection: 'row',
-    height: 60,  // 고정 높이 설정
+    height: 40,  // 고정 높이 설정
   },
   firstColumn: {
     width: '10%',
@@ -265,7 +324,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   checklistValue: {
-    fontSize: 10,
+    fontSize: 9,
     textAlign: 'center',
   },
   specialNotesSection: {
@@ -356,8 +415,52 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontFamily: 'Pretendard',
     minHeight: 50,  // 의견 작성 공간 확보
-  }
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20, // 상단 여백 추가
+    borderTop: 1,
+    paddingTop: 10, // 상단 패딩 추가
+  },
+  noBorderTop: {
+    borderTop: 0, // 상단 구분선 제거
+  },
+  noBorderBottom: {
+    borderBottom: 0, // 하단 구분선 제거
+  },
+  pdfFooterText: {
+    position: 'absolute',
+    bottom: 20,
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    fontSize: 10,
+    color: '#000',
+  },
 });
+
+// 이미지 섹션 추가
+const ImagesSection = ({ images }) => {
+  if (!images || images.length === 0) return null;
+
+  return (
+    <View style={styles.section} break>
+      <Text style={styles.title}>현장 사진</Text>
+      <View style={styles.imagesContainer}>
+        {images.map((image, index) => (
+          <View key={index} style={styles.imageWrapper}>
+            <Image
+              src={`http://localhost:8080/uploads/images/${image}`}
+              style={styles.image}
+            />
+            <Text style={styles.imageCaption}>현장사진 {index + 1}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+};
 
 // PDF 문서 컴포넌트
 const InspectionPDF = ({ data, checklistLabels, getStatusText }) => (
@@ -367,7 +470,7 @@ const InspectionPDF = ({ data, checklistLabels, getStatusText }) => (
 
       {/* 상단 섹션 */}
       <View style={styles.topSection}>
-        {/* 좌측: 기본 정보 */}
+        {/* 좌측: 기본 정보 (점검자 제거) */}
         <View style={styles.topLeftSection}>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>업체명</Text>
@@ -377,32 +480,28 @@ const InspectionPDF = ({ data, checklistLabels, getStatusText }) => (
             <Text style={styles.infoLabel}>점검일자</Text>
             <Text style={styles.infoValue}>{data.inspectionDate}</Text>
           </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>점검자</Text>
-            <Text style={styles.infoValue}>{data.managerName}</Text>
+        </View>
+
+        {/* 우측: 결재란 (이미지 참고) */}
+        <View style={styles.approvalTable}>
+          {/* 첫 번째 행 (결재) - 구분선 없음 */}
+          <View style={styles.approvalRow}>
+            <Text style={[styles.approvalCell, styles.noBorderBottom]}>결</Text>
+            <Text style={styles.approvalCell}>담당</Text>
+            <Text style={styles.approvalCell}></Text>
+            <Text style={styles.approvalCell}></Text>
+          </View>
+          {/* 두 번째 행 (결재) - 구분선 없음 */}
+          <View style={styles.approvalRow}>
+            <Text style={[styles.approvalCell, styles.noBorderTop]}>재</Text>
+            <View style={styles.signatureBox} />
+            <View style={styles.signatureBox} />
+            <View style={styles.signatureBox} />
           </View>
         </View>
 
-        {/* 우측: 서명란 */}
-        <View style={styles.signatureSection}>
-          <View style={styles.signatureContainer}>
-            <Text style={styles.signatureLabel}>점검자</Text>
-            {data.signature ? (
-              <Image src={data.signature} style={styles.signatureBox} />
-            ) : (
-              <View style={styles.signatureBox} />
-            )}
-          </View>
-          <View style={styles.signatureContainer}>
-            <Text style={styles.signatureLabel}>관리자</Text>
-            {data.managerSignature ? (
-              <Image src={data.managerSignature} style={styles.signatureBox} />
-            ) : (
-              <View style={styles.signatureBox} />
-            )}
-          </View>
-        </View>
       </View>
+
 
       {/* 기본사항 섹션 */}
       <View style={styles.section}>
@@ -457,6 +556,40 @@ const InspectionPDF = ({ data, checklistLabels, getStatusText }) => (
       <View style={styles.section}>
         <Text style={styles.title}>2. 점검내역</Text>
         <View style={styles.checklistTable}>
+          {/* 고압설비 행 */}
+          <View style={styles.checklistRow}>
+            <View style={styles.firstColumn}>
+              <Text>고압설비</Text>
+            </View>
+            {[
+              { id: 'aerialLine', label: '가공\n전선로' },
+              { id: 'undergroundWireLine', label: '지중\n전선로' },
+              { id: 'powerSwitch', label: '수배전용\n개폐기' },
+              { id: 'busbar', label: '배선\n(모선)' },
+              { id: 'lightningArrester', label: '피뢰기' },
+              { id: 'transformer', label: '변성기' },
+              { id: 'powerFuse', label: '전력\n퓨즈' },
+              { id: 'powerTransformer', label: '변압기' },
+              { id: 'incomingPanel', label: '수배\n전반' },
+              { id: 'relay', label: '계전\n기류' },
+              { id: 'circuitBreaker', label: '차단\n기류' },
+              { id: 'powerCapacitor', label: '전력용\n콘덴서' },
+              { id: 'protectionEquipment', label: '보호\n설비' },
+              { id: 'loadEquipment', label: '부하\n설비' },
+              { id: 'groundingSystem', label: '접지\n설비' }
+            ].map((item) => (
+              <View key={item.id} style={styles.itemColumn}>
+                <View style={styles.itemHeader}>
+                  <Text>{item.label}</Text>
+                </View>
+                <View style={styles.itemValue}>
+                  <Text>{data[item.id] || '/'}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+
+          {/* 저압설비 행 */}
           <View style={styles.checklistRow}>
             <View style={styles.firstColumn}>
               <Text>저압설비</Text>
@@ -551,21 +684,41 @@ const InspectionPDF = ({ data, checklistLabels, getStatusText }) => (
         </View>
       </View>
 
-      {/* 이미지 섹션 */}
-      {/* {data.images && data.images.length > 0 && (
-        <View style={styles.imageSection}>
-          <Text style={styles.title}>5. 첨부 이미지</Text>
-          <View style={styles.imageGrid}>
-            {data.images.map((image, index) => (
-              <Image
-                key={index}
-                src={`http://localhost:8080/uploads/images/${image}`}
-                style={styles.image}
-              />
-            ))}
+      {/* 하단 레이아웃 */}
+      <View style={styles.footer}>
+        {/* 왼쪽 - 로고 & 회사 정보 */}
+        <View style={styles.logoContainer}>
+          <Image src="/images/sobang.png" style={styles.logo} />
+          <View style={styles.companyInfo}>
+            <Text>(주) 강동소방</Text>
+            <Text>대전 서구 대덕대로 141 (갈마동) 2층, 201호(수정빌딩)</Text>
+            <Text>0507-1343-1190</Text>
+            <Text>0507-1343-1190</Text>
           </View>
         </View>
-      )} */}
+
+        {/* 오른쪽 - 서명란 */}
+        <View style={styles.signatureTable}>
+          <View style={styles.signatureRow}>
+            <Text style={[styles.signatureCell, styles.noBorderBottom]}>확</Text>
+            <Text style={styles.signatureCell}>점검 입회자</Text>
+            <Text style={styles.signatureCell}></Text>
+            <Text style={styles.signatureCellRight}>서명 또는 인</Text>
+          </View>
+          <View style={styles.signatureRow}>
+            <Text style={[styles.signatureCell, styles.noBorderTop]}>인</Text>
+
+            <Text style={styles.signatureCell}>전기 안전 관리자</Text>
+            <Text style={styles.signatureCell}>{data.managerName}</Text>
+            <Image src={data.signature || '/images/signature.png'} style={styles.signatureBoxBottom} />
+          </View>
+        </View>
+      </View>
+
+      <Text style={styles.pdfFooterText}>문의 www.oasyss.co.kr</Text>
+
+      {/* 이미지 섹션 */}
+      <ImagesSection images={data.images} />
     </Page>
   </Document>
 );

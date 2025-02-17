@@ -25,12 +25,13 @@ const InspectionList = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const itemsPerPage = 10;
   const navigate = useNavigate();
+  const [totalPages, setTotalPages] = useState(1);
 
   // 현재 로그인한 사용자 정보 조회
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         const response = await fetch('http://localhost:8080/api/auth/me', {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -49,53 +50,34 @@ const InspectionList = () => {
     fetchCurrentUser();
   }, []);
 
-  useEffect(() => {
-    let filtered = inspections;
-
-    // USER 권한일 경우 해당 회사의 점검 목록만 필터링
-    if (currentUser?.role === 'USER' && currentUser?.companyId) {
-      filtered = inspections.filter(inspection => 
-        inspection.companyId === currentUser.companyId
-      );
-    }
-
-    // 검색어로 추가 필터링
-    if (searchTerm) {
-      filtered = filtered.filter(inspection =>
-        inspection.managerName?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    setFilteredInspections(filtered);
-    setPage(1);
-  }, [searchTerm, inspections, currentUser]);
-
   const fetchInspections = async (user) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       if (!token) {
         console.error('토큰이 없습니다. 로그인이 필요합니다.');
         return;
       }
-
-      const response = await fetch('http://localhost:8080/api/inspections', {
+  
+      // USER 권한일 경우 회사별 API 사용, 그 외는 전체 조회 API 사용
+      const url = user?.role === 'USER' && user?.companyId
+        ? `http://localhost:8080/api/inspections/company/${user.companyId}`
+        : 'http://localhost:8080/api/inspections';
+  
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-
+  
       if (response.ok) {
         const data = await response.json();
-        const inspectionsArray = Array.isArray(data) ? data : data.content || [];
+        // 점검 ID 기준 내림차순 정렬 (최신 점검이 앞에 오도록)
+        const inspectionsArray = (data.content || []).sort((a, b) => b.inspectionId - a.inspectionId);
         
-        // USER 권한일 경우 해당 회사의 점검 목록만 필터링
-        const filteredArray = user?.role === 'USER' && user?.companyId
-          ? inspectionsArray.filter(inspection => inspection.companyId === user.companyId)
-          : inspectionsArray;
-
-        setInspections(filteredArray);
-        setFilteredInspections(filteredArray);
+        setInspections(inspectionsArray);
+        setFilteredInspections(inspectionsArray);
+        setTotalPages(data.totalPages);
       } else {
         console.error('API 호출 실패:', response.status);
       }
@@ -105,6 +87,7 @@ const InspectionList = () => {
       setFilteredInspections([]);
     }
   };
+  
 
   const getCurrentPageData = () => {
     if (!Array.isArray(filteredInspections)) {
@@ -217,8 +200,9 @@ const InspectionList = () => {
                     '&:hover': { bgcolor: '#f5f5f5' }
                   }}
                 >
+                  {/* 최신순을 유지하면서 연속된 번호 부여 */}
                   <TableCell sx={{ py: 1, fontSize: '0.875rem' }}>
-                    {inspection.inspectionId}
+                    {filteredInspections.length - ((page - 1) * itemsPerPage + index)}
                   </TableCell>
                   <TableCell sx={{ py: 1, fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {inspection.companyName}
@@ -232,13 +216,14 @@ const InspectionList = () => {
                 </TableRow>
               ))}
             </TableBody>
+
           </Table>
         </TableContainer>
 
         {/* 페이지네이션 */}
         <Stack spacing={2} alignItems="center">
           <Pagination
-            count={Math.ceil(filteredInspections.length / itemsPerPage)}
+            count={totalPages}
             page={page}
             onChange={handlePageChange}
             color="primary"

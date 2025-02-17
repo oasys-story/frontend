@@ -13,10 +13,8 @@ import {
   Typography,
   Pagination,
   Stack,
-  Button
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import AddIcon from '@mui/icons-material/Add';
 import { useNavigate } from 'react-router-dom';
 
 const FireSafetyInspectionList = () => {
@@ -26,10 +24,51 @@ const FireSafetyInspectionList = () => {
   const [page, setPage] = useState(1);
   const itemsPerPage = 10;
   const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    fetchInspections();
+    const fetchUserAndInspections = async () => {
+      try {
+        const token = sessionStorage.getItem('token');
+        const userResponse = await fetch('http://localhost:8080/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+  
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          setCurrentUser(userData);
+  
+          const inspectionsResponse = await fetch('http://localhost:8080/api/fire-inspections', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+  
+          if (inspectionsResponse.ok) {
+            let inspectionsData = await inspectionsResponse.json();
+            
+            // 사용자 권한이 USER이면 본인의 회사 점검만 필터링
+            let filteredInspections = userData.role === 'USER'
+              ? inspectionsData.filter(inspection => inspection.companyId === userData.companyId)
+              : inspectionsData;
+            
+            // fireInspectionId 기준 내림차순 정렬 (최신 점검이 앞에 오도록)
+            filteredInspections.sort((a, b) => b.fireInspectionId - a.fireInspectionId);
+  
+            setInspections(filteredInspections);
+            setFilteredInspections(filteredInspections);
+          }
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    };
+  
+    fetchUserAndInspections();
   }, []);
+  
 
   useEffect(() => {
     let filtered = inspections;
@@ -41,24 +80,6 @@ const FireSafetyInspectionList = () => {
     setFilteredInspections(filtered);
     setPage(1);
   }, [searchTerm, inspections]);
-
-  const fetchInspections = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/fire-inspections', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setInspections(data);
-        setFilteredInspections(data);
-      }
-    } catch (error) {
-      console.error('Error fetching inspections:', error);
-    }
-  };
 
   const getCurrentPageData = () => {
     const startIndex = (page - 1) * itemsPerPage;
@@ -139,7 +160,10 @@ const FireSafetyInspectionList = () => {
                     '&:hover': { bgcolor: '#f5f5f5' }
                   }}
                 >
-                  <TableCell sx={{ py: 1, fontSize: '0.875rem' }}>{inspection.fireInspectionId}</TableCell>
+                  {/* 최신순을 유지하면서 연속된 번호 부여 */}
+                  <TableCell sx={{ py: 1, fontSize: '0.875rem' }}>
+                    {filteredInspections.length - ((page - 1) * itemsPerPage + index)}
+                  </TableCell>
                   <TableCell sx={{ py: 1, fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {inspection.buildingName}
                   </TableCell>
@@ -148,6 +172,8 @@ const FireSafetyInspectionList = () => {
                 </TableRow>
               ))}
             </TableBody>
+
+
           </Table>
         </TableContainer>
 

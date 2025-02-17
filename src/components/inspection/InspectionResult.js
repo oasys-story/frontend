@@ -15,12 +15,25 @@ import {
   Grid,
   Paper,
   ImageList,
-  ImageListItem
+  ImageListItem,
+  Tabs,
+  Tab,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Divider
 } from '@mui/material';
 import SignatureDialog from './SignatureDialog';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import InspectionPDF from './InspectionPdf';
+import ShareIcon from '@mui/icons-material/Share';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import CheckIcon from '@mui/icons-material/Check';
 
 const InspectionResult = () => {
   const { id } = useParams();
@@ -33,14 +46,21 @@ const InspectionResult = () => {
   const [signatureDialogOpen, setSignatureDialogOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [sending, setSending] = useState(false);
+  const [selectedTab, setSelectedTab] = useState(0);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [employees, setEmployees] = useState([]);
 
   const checklistLabels = {
+
+    // 저압설비
     wiringInlet: '인입구 배선',
     distributionPanel: '배·분전반',
     moldedCaseBreaker: '배선용 차단기',
     earthLeakageBreaker: '누전 차단기',
     switchGear: '개폐기',
     wiring: '배선',
+
     motor: '전동기',
     heatingEquipment: '전열설비',
     welder: '용접기',
@@ -49,40 +69,65 @@ const InspectionResult = () => {
     grounding: '접지설비',
     internalWiring: '구내 전선로',
     generator: '발전기',
-    otherEquipment: '기타설비'
+    otherEquipment: '기타설비',
+  
+    // 고압설비비
+    aerialLine: '가공전선로',
+    undergroundWireLine: '지중전선로',
+    powerSwitch: '수배전용 개폐기',
+    busbar: '배선(모선)',
+    lightningArrester: '피뢰기',
+    transformer: '변성기',
+    powerFuse: '전력 퓨즈',
+    powerTransformer: '변압기',
+    incomingPanel: '수배전반',
+    relay: '계전기류',
+    circuitBreaker: '차단기류',
+    powerCapacitor: '전력용 콘덴서',
+    protectionEquipment: '보호설비',
+    loadEquipment: '부하 설비',
+    groundingSystem: '접지 설비'
   };
 
   useEffect(() => {
-    const fetchInspectionDetail = async () => {
-      setLoading(true);
+    const fetchData = async () => {
       try {
+        setLoading(true);
         const response = await fetch(`http://localhost:8080/api/inspections/${id}/detail`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${sessionStorage.getItem('token')}`
           }
         });
-        if (!response.ok) {
-          throw new Error('점검 데이터를 불러오는데 실패했습니다.');
+
+        if (response.ok) {
+          const inspectionData = await response.json();
+          if (typeof inspectionData.measurements === 'string') {
+            inspectionData.measurements = JSON.parse(inspectionData.measurements);
+          }
+          if (!inspectionData.measurements) {
+            inspectionData.measurements = [];
+          }
+          setData(inspectionData);
+          if (inspectionData.phoneNumber) {
+            setPhoneNumber(inspectionData.phoneNumber);
+          }
+        } else {
+          setError('데이터를 불러오는데 실패했습니다.');
         }
-        const fetchedData = await response.json();
-        if (typeof fetchedData.measurements === 'string') {
-          fetchedData.measurements = JSON.parse(fetchedData.measurements);
-        }
-        setData(fetchedData);
       } catch (error) {
-        console.error('Error:', error);
-        setError(error.message);
+        console.error('Error fetching data:', error);
+        setError('데이터를 불러오는데 실패했습니다.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchInspectionDetail();
+    fetchData();
   }, [id]);
 
   useEffect(() => {
     // 컴포넌트 마운트 시 ADMIN 권한 체크
-    const userRole = localStorage.getItem('role');
+    const userRole = sessionStorage.getItem('role');
     setIsAdmin(userRole === 'ADMIN');
   }, []);
 
@@ -102,25 +147,41 @@ const InspectionResult = () => {
     }
   };
 
-  const handleSendSms = async () => {
-    // 하이픈과 공백을 모두 제거하고 국제 형식으로 변환
-    const internationalNumber = '+82' + phoneNumber.replace(/[-\s]/g, '').replace(/^0/, '');
+  const handleSendSMS = async () => {
+    if (!phoneNumber) {
+      alert('전화번호를 입력해주세요.');
+      return;
+    }
+
+    if (!window.confirm('입력하신 번호로 알림톡을 전송하시겠습니까?')) {
+      return;
+    }
+
+    setSending(true);
     try {
-      const response = await fetch(
-        `http://localhost:8080/api/inspections/${id}/send-sms?phoneNumber=${internationalNumber}`,
-        { method: 'POST' }
-      );
-      
-      if (response.ok) { // 전송 성공 여부 확인
-        alert('점검 결과가 전송되었습니다.');
-        setSmsDialogOpen(false); // SMS 전송 다이얼로그 닫기
+      const response = await fetch(`http://localhost:8080/api/kakao-alert/inspection/${id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          phoneNumber: phoneNumber.replace(/-/g, '')
+        })
+      });
+
+      if (response.ok) {
+        alert('알림톡이 전송되었습니다.');
+        setSmsDialogOpen(false);
       } else {
-        const errorText = await response.text(); 
-        throw new Error(errorText || '전송에 실패했습니다.'); 
+        const error = await response.text();
+        throw new Error(error);
       }
     } catch (error) {
-      alert(error.message || '메시지 전송 중 오류가 발생했습니다.'); 
-      console.error(error);
+      console.error('알림톡 전송 실패:', error);
+      alert('알림톡 전송에 실패했습니다.');
+    } finally {
+      setSending(false);
     }
   };
 
@@ -131,7 +192,7 @@ const InspectionResult = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
         },
         body: JSON.stringify({ signature: signatureData })
       });
@@ -161,7 +222,7 @@ const InspectionResult = () => {
         const response = await fetch(`http://localhost:8080/api/inspections/${id}`, {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${sessionStorage.getItem('token')}`
           }
         });
 
@@ -196,6 +257,136 @@ const InspectionResult = () => {
       {children}
     </Box>
   );
+
+  const InspectionSection = () => {
+    const lowVoltageItems = [
+      'wiringInlet', 'distributionPanel', 'moldedCaseBreaker', 'earthLeakageBreaker', 
+      'switchGear', 'wiring', 'motor', 'heatingEquipment', 'welder', 'capacitor', 
+      'lighting', 'grounding', 'internalWiring', 'generator', 'otherEquipment'
+    ];
+
+    const highVoltageItems = [
+      'aerialLine', 'undergroundWireLine', 'powerSwitch', 'busbar', 'lightningArrester',
+      'transformer', 'powerFuse', 'powerTransformer', 'incomingPanel', 'relay',
+      'circuitBreaker', 'powerCapacitor', 'protectionEquipment', 'loadEquipment', 'groundingSystem'
+    ];
+
+    const getStatusChip = (status) => {
+      const statusColors = {
+        'O': 'success',
+        'X': 'error',
+        '△': 'warning',
+        '/': 'default'
+      };
+      
+      const statusLabels = {
+        'O': '적합',
+        'X': '부적합',
+        '△': '보통',
+        '/': '해당없음'
+      };
+
+      return (
+        <Chip 
+          label={statusLabels[status]} 
+          color={statusColors[status]} 
+          size="small"
+          sx={{ minWidth: '80px' }}
+        />
+      );
+    };
+
+    return (
+      <Box sx={{ width: '100%' }}>
+        <Tabs
+          value={selectedTab}
+          onChange={(e, newValue) => setSelectedTab(newValue)}
+          sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}
+        >
+          <Tab label="저압설비" />
+          <Tab label="고압설비" />
+        </Tabs>
+
+        {selectedTab === 0 && (
+          <Accordion defaultExpanded={false}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="subtitle2">저압설비 점검내역</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {lowVoltageItems.map((item) => (
+                  <Box
+                    key={item}
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      py: 0.5,
+                      borderBottom: '1px solid #eee'
+                    }}
+                  >
+                    <Typography variant="body2">{checklistLabels[item]}</Typography>
+                    {getStatusChip(data[item])}
+                  </Box>
+                ))}
+              </Box>
+            </AccordionDetails>
+          </Accordion>
+        )}
+
+        {selectedTab === 1 && (
+          <Accordion defaultExpanded={false}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="subtitle2">고압설비 점검내역</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {highVoltageItems.map((item) => (
+                  <Box
+                    key={item}
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      py: 0.5,
+                      borderBottom: '1px solid #eee'
+                    }}
+                  >
+                    <Typography variant="body2">{checklistLabels[item]}</Typography>
+                    {getStatusChip(data[item])}
+                  </Box>
+                ))}
+              </Box>
+            </AccordionDetails>
+          </Accordion>
+        )}
+      </Box>
+    );
+  };
+
+  // 직원 목록 조회 함수
+  const fetchEmployees = async () => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/companies/${data?.companyId}/employees`, {
+        headers: {
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setEmployees(data.filter(emp => emp.active));
+      }
+    } catch (error) {
+      console.error('직원 정보 조회 실패:', error);
+    }
+  };
+
+  // SMS 다이얼로그가 열릴 때 직원 목록 조회
+  useEffect(() => {
+    if (smsDialogOpen && data?.companyId) {
+      fetchEmployees();
+    }
+  }, [smsDialogOpen, data?.companyId]);
 
   if (loading) {
     return (
@@ -240,11 +431,10 @@ const InspectionResult = () => {
   };
 
   // 권한 체크
-  const currentUserId = localStorage.getItem('userId');
+  const currentUserId = sessionStorage.getItem('userId');
   
   // 수정/삭제 권한 체크
   const hasPermission = isAdmin || (data?.userId === parseInt(currentUserId));
-
 
   return (
     <Box sx={{ 
@@ -356,26 +546,7 @@ const InspectionResult = () => {
           }}>
             점검내역
           </Typography>
-          {Object.entries(checklistLabels).map(([key, label]) => (
-            <Box key={key} sx={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center',
-              py: 1.5,
-              borderBottom: '1px solid #eee'
-            }}>
-              <Typography variant="body1">{label}</Typography>
-              <Chip 
-                label={getStatusText(data[key])}
-                color={getStatusColor(data[key])}
-                size="small"
-                sx={{ 
-                  minWidth: 60,
-                  height: 24
-                }}
-              />
-            </Box>
-          ))}
+          <InspectionSection />
         </Paper>
 
         {/* 측정개소 */}
@@ -389,7 +560,7 @@ const InspectionResult = () => {
           }}>
             측정개소
           </Typography>
-          {data.measurements && data.measurements.map((measurement, index) => (
+          {data?.measurements && Array.isArray(data.measurements) && data.measurements.map((measurement, index) => (
             <Box key={index} sx={{ mb: 3 }}>
               <Typography variant="subtitle2" gutterBottom sx={{ mb: 2 }}>
                 측정개소 {measurement.measurementNumber}
@@ -564,29 +735,24 @@ const InspectionResult = () => {
                 />
               ) : (
                 <Box
-                  onClick={() => 
-                    localStorage.getItem('role') === 'USER' 
-                      ? setSignatureDialogOpen(true) 
-                      : alert('점검대상업체만 서명할 수 있습니다.')
-                  }
+                  onClick={() => setSignatureDialogOpen(true)}
                   sx={{ 
                     width: '100%', 
                     height: '100px', 
-                    border: '1px dashed #1C243A',
+                    border: '1px dashed #343959',
                     borderRadius: 1,
                     mt: 1,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    cursor: localStorage.getItem('role') === 'USER' ? 'pointer' : 'not-allowed',
-                    opacity: localStorage.getItem('role') === 'USER' ? 1 : 0.6,
+                    cursor: 'pointer',
                     '&:hover': {
-                      bgcolor: localStorage.getItem('role') === 'USER' ? 'rgba(28, 36, 58, 0.04)' : undefined
+                      bgcolor: 'rgba(52, 57, 89, 0.04)'
                     }
                   }}
                 >
                   <Typography color="primary">
-                    {localStorage.getItem('role') === 'USER' ? '서명하기' : '점검대상업체 전용'}
+                    서명하기
                   </Typography>
                 </Box>
               )}
@@ -650,6 +816,14 @@ const InspectionResult = () => {
       }}>
         <Button
           variant="outlined"
+          startIcon={<ShareIcon />}
+          onClick={() => setSmsDialogOpen(true)}
+          sx={{ minWidth: '100px' }}
+        >
+          알림톡 전송
+        </Button>
+        <Button
+          variant="outlined"
           onClick={() => navigate('/inspections')}
           sx={{ minWidth: '100px' }}
         >
@@ -688,31 +862,120 @@ const InspectionResult = () => {
       </Box>
 
       {/* SMS 다이얼로그 */}
-      <Dialog open={smsDialogOpen} onClose={() => setSmsDialogOpen(false)}>
-        <DialogTitle>SMS 전송</DialogTitle>
+      <Dialog open={smsDialogOpen} onClose={() => !sending && setSmsDialogOpen(false)}>
+        <DialogTitle sx={{ 
+          bgcolor: '#f8f9fa',
+          p: 2.5,
+          borderBottom: '1px solid #eee',
+          textAlign: 'center',
+          position: 'relative'
+        }}>
+          <Typography variant="h6" sx={{ fontWeight: 500, color: '#343959' }}>
+            점검 결과 알림톡 전송
+          </Typography>
+        </DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            점검 결과를 전송할 전화번호를 입력하세요.
-          </DialogContentText>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="전화번호"
-            type="tel"
-            fullWidth
-            value={phoneNumber}
-            onChange={handlePhoneNumberChange}
-            placeholder="010-0000-0000"
-          />
+          <Box sx={{ mt: 2 }}>
+            {/* 직원 선택 Select */}
+            <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+              <InputLabel id="employee-select-label">전송할 직원 선택</InputLabel>
+              <Select
+                labelId="employee-select-label"
+                value={selectedEmployee ? selectedEmployee.employeeId : ''}
+                onChange={(e) => {
+                  const selected = employees.find(emp => emp.employeeId === e.target.value);
+                  setSelectedEmployee(selected);
+                  setPhoneNumber(selected ? selected.phone : '');
+                }}
+                label="전송할 직원 선택"
+                sx={{
+                  bgcolor: '#f8f9fa',
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#e0e0e0'
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#343959'
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#343959'
+                  }
+                }}
+              >
+                <MenuItem value="" sx={{ color: '#666' }}>
+                  <em>직원 선택</em>
+                </MenuItem>
+                {employees.map((employee) => (
+                  <MenuItem 
+                    key={employee.employeeId} 
+                    value={employee.employeeId}
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      gap: 1
+                    }}
+                  >
+                    <Typography>{employee.name}</Typography>
+                    <Typography color="text.secondary" variant="body2">
+                      {employee.phone}
+                    </Typography>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* 구분선 */}
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center',
+              my: 2,
+              color: '#666'
+            }}>
+              <Divider sx={{ flex: 1 }} />
+              <Typography variant="body2" sx={{ mx: 1 }}>또는</Typography>
+              <Divider sx={{ flex: 1 }} />
+            </Box>
+
+            {/* 직접 입력 */}
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+              직접 입력
+            </Typography>
+            <TextField
+              margin="dense"
+              label="전화번호"
+              type="tel"
+              fullWidth
+              value={phoneNumber}
+              onChange={handlePhoneNumberChange}
+              disabled={sending}
+              placeholder="010-0000-0000"
+              helperText="'-' 없이 입력해주세요."
+              size="small"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: '#f8f9fa'
+                }
+              }}
+            />
+          </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSmsDialogOpen(false)}>취소</Button>
+        <DialogActions sx={{ p: 2, borderTop: '1px solid #eee' }}>
           <Button 
-            onClick={handleSendSms} 
-            variant="contained"
-            disabled={phoneNumber.length < 13}
+            onClick={() => setSmsDialogOpen(false)} 
+            disabled={sending}
+            sx={{ color: '#666' }}
           >
-            전송
+            취소
+          </Button>
+          <Button 
+            onClick={handleSendSMS} 
+            variant="contained"
+            disabled={sending || !phoneNumber}
+            sx={{ 
+              bgcolor: '#343959',
+              '&:hover': { bgcolor: '#3d63b8' }
+            }}
+          >
+            {sending ? '전송중...' : '전송하기'}
           </Button>
         </DialogActions>
       </Dialog>

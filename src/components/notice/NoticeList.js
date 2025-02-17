@@ -12,7 +12,7 @@ import {
   Button,
   InputAdornment,
   Typography,
-  Chip,
+  // Chip,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -23,12 +23,16 @@ import {
   Stack,
   Pagination,
   Snackbar,
-  Alert
+  Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
+// import DeleteIcon from '@mui/icons-material/Delete';
 import { useNavigate } from 'react-router-dom';
 import NoticeDialog from './NoticeDialog';
 import IconButton from '@mui/material/IconButton';
@@ -37,6 +41,7 @@ import ClearIcon from '@mui/icons-material/Clear';
 const NoticeList = () => {
   const [notices, setNotices] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState('latest'); // 기본값: 최신순
   const [filteredNotices, setFilteredNotices] = useState([]);
   const [page, setPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -57,6 +62,10 @@ const NoticeList = () => {
     message: '',
     severity: 'success'
   });
+  const [formErrors, setFormErrors] = useState({
+    title: false,
+    content: false
+  });
 
   // 초기 상태 상수로 정의
   const initialNoticeState = {
@@ -73,22 +82,53 @@ const NoticeList = () => {
   }, []);
 
   useEffect(() => {
-    const filtered = notices.filter(notice =>
-      notice.title.toLowerCase().includes(searchTerm.toLowerCase())
+    let filtered = notices.filter(notice =>
+      notice.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(notice.writerName).includes(searchTerm) // ID 검색
     );
+  
+    // 날짜 정렬 필터 적용
+    const now = new Date();
+    switch (dateFilter) {
+      case 'oldest':
+        filtered.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        break;
+      case 'latest':
+        filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        break;
+      case 'week':
+        filtered = filtered.filter(notice => {
+          const noticeDate = new Date(notice.createdAt);
+          return now - noticeDate <= 7 * 24 * 60 * 60 * 1000;
+        });
+        break;
+      case 'month':
+        filtered = filtered.filter(notice => {
+          const noticeDate = new Date(notice.createdAt);
+          return now - noticeDate <= 30 * 24 * 60 * 60 * 1000;
+        });
+        break;
+      default:
+        break;
+    }
+  
     setFilteredNotices(filtered);
     setPage(1);
-  }, [searchTerm, notices]);
+  }, [searchTerm, dateFilter, notices]);
 
   const fetchNotices = async () => {
     try {
       const response = await fetch('http://localhost:8080/api/notices', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
         }
       });
       if (response.ok) {
-        const data = await response.json();
+        let data = await response.json();
+        
+        // noticeId 기준 내림차순 정렬 (최신 공지가 앞에 오도록)
+        data.sort((a, b) => b.noticeId - a.noticeId);
+  
         setNotices(data);
         setFilteredNotices(data);
       }
@@ -96,17 +136,28 @@ const NoticeList = () => {
       console.error('Failed to fetch notices:', error);
     }
   };
+  
 
   const handleCloseSnackbar = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
   const handleSubmit = async () => {
+    // 유효성 검사 추가
+    if (!newNotice.title.trim() || !newNotice.content.trim()) {
+      setFormErrors({
+        title: !newNotice.title.trim(),
+        content: !newNotice.content.trim()
+      });
+      alert('제목과 내용을 모두 입력해주세요.');
+      return;
+    }
+
     try {
       const formData = new FormData();
       formData.append('title', newNotice.title);
       formData.append('content', newNotice.content);
-      formData.append('userId', localStorage.getItem('userId'));
+      formData.append('userId', sessionStorage.getItem('userId'));
       formData.append('popup', newNotice.popup);
       if (newNotice.popup) {
         formData.append('popupStartDate', newNotice.popupStartDate.toISOString());
@@ -121,7 +172,7 @@ const NoticeList = () => {
       const response = await fetch('http://localhost:8080/api/notices', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
         },
         body: formData
       });
@@ -193,13 +244,17 @@ const NoticeList = () => {
   };
 
   const handleAddNoticeClick = () => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (!token) {
       setSnackbar({
         open: true,
         message: '로그인 후 이용해 주세요.',
-        severity: 'warning'  // 경고 메시지는 노란색으로 표시
+        severity: 'warning'
       });
+      
+      // 커스텀 이벤트를 발생시켜 로그인 다이얼로그를 표시
+      const event = new CustomEvent('openLoginDialog');
+      window.dispatchEvent(event);
       return;
     }
     setDialogOpen(true);
@@ -233,22 +288,38 @@ const NoticeList = () => {
 
       <Box sx={{ mt: 6 }}>
         {/* 검색창 */}
-        <TextField
-          size="small"
-          fullWidth
-          variant="outlined"
-          placeholder="제목 검색"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          sx={{ mb: 2 }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon color="action" />
-              </InputAdornment>
-            ),
-          }}
-        />
+        <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+          {/* 제목 & ID 검색 */}
+          <TextField
+            size="small"
+            variant="outlined"
+            placeholder="제목 또는 ID 검색"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            sx={{ width: '70%' }} // 7:3 비율 유지
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon color="action" />
+                </InputAdornment>
+              ),
+            }}
+          />
+          
+          {/* 날짜 정렬 필터 */}
+          <FormControl size="small" sx={{ width: '30%' }}>
+            <InputLabel>날짜 정렬</InputLabel>
+            <Select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+            >
+              <MenuItem value="latest">최신 순</MenuItem>
+              <MenuItem value="oldest">오래된 순</MenuItem>
+              <MenuItem value="week">1주일 내 내역</MenuItem>
+              <MenuItem value="month">1달 내 내역</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
 
         {/* 공지사항 목록 테이블 */}
         <TableContainer component={Paper} sx={{ mb: 2, boxShadow: 'none' }}>
@@ -378,7 +449,13 @@ const NoticeList = () => {
                 fullWidth
                 label="제목"
                 value={newNotice.title}
-                onChange={(e) => setNewNotice({...newNotice, title: e.target.value})}
+                onChange={(e) => {
+                  setNewNotice({...newNotice, title: e.target.value});
+                  setFormErrors(prev => ({...prev, title: false}));
+                }}
+                error={formErrors.title}
+                helperText={formErrors.title ? "제목을 입력해주세요" : ""}
+                required
               />
             </Grid>
             <Grid item xs={12}>
@@ -388,7 +465,13 @@ const NoticeList = () => {
                 multiline
                 rows={4}
                 value={newNotice.content}
-                onChange={(e) => setNewNotice({...newNotice, content: e.target.value})}
+                onChange={(e) => {
+                  setNewNotice({...newNotice, content: e.target.value});
+                  setFormErrors(prev => ({...prev, content: false}));
+                }}
+                error={formErrors.content}
+                helperText={formErrors.content ? "내용을 입력해주세요" : ""}
+                required
               />
             </Grid>
             <Grid item xs={12}>

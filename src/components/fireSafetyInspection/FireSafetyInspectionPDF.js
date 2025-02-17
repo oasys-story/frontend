@@ -22,7 +22,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Pretendard',
     display: 'flex',
     flexDirection: 'column',
-    height: '100%',
+    position: 'relative',
   },
   title: {
     fontSize: 18,
@@ -32,32 +32,31 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 15,
-    border: '1pt solid #1C243A',
+    border: '1pt solid #808080',
   },
   headerRow: {
     flexDirection: 'row',
-    borderBottom: '1pt solid #1C243A',
-    minHeight: 30,
-    alignItems: 'center',
+    borderBottom: '1px solid #808080',
+    alignItems: 'stretch',
   },
   headerCell: {
-    width: '25%',
+    backgroundColor: '#808080',
+    color: 'white',
     padding: 5,
-    backgroundColor: '#1C243A',
-    color: '#FFFFFF',
-    borderRight: '1pt solid #1C243A',
+    width: '20%',
     fontSize: 10,
+    textAlign: 'center',
+    fontWeight: 'bold',
   },
   headerValue: {
-    width: '25%',
     padding: 5,
-    borderRight: '1pt solid #1C243A',
     fontSize: 10,
+    border: '1px solid #808080',
+    width: '30%',
   },
   inspectionSection: {
-    marginBottom: 10,
-    border: '1pt solid #1C243A',
-    flex: 1,
+    marginBottom: 35,
+    border: '1pt solid #808080',
   },
   inspectionContent: {
     display: 'flex',
@@ -65,13 +64,13 @@ const styles = StyleSheet.create({
   },
   inspectionMainHeader: {
     flexDirection: 'row',
-    borderBottom: '1pt solid #1C243A',
-    backgroundColor: '#1C243A',
-    minHeight: 40,
+    borderBottom: '1pt solid #808080',
+    backgroundColor: '#808080',
+    minHeight: 35,
   },
   inspectionHeaderLeft: {
     width: '20%',
-    padding: 8,
+    padding: 10,
     color: '#FFFFFF',
     fontSize: 11,
     fontWeight: 'bold',
@@ -79,20 +78,20 @@ const styles = StyleSheet.create({
   },
   inspectionHeaderRight: {
     flex: 1,
-    padding: 8,
+    padding: 10,
     color: '#FFFFFF',
     fontSize: 11,
     fontWeight: 'bold',
   },
   inspectionRow: {
     flexDirection: 'row',
-    borderBottom: '1pt solid #1C243A',
-    minHeight: 71,
+    borderBottom: '1pt solid #808080',
+    minHeight: 60,
   },
   inspectionLabel: {
     width: '20%',
     padding: 10,
-    borderRight: '1pt solid #1C243A',
+    borderRight: '1pt solid #808080',
     fontSize: 11,
     alignSelf: 'stretch',
   },
@@ -115,14 +114,15 @@ const styles = StyleSheet.create({
     height: 90,
   },
   signatureBox: {
-    width: '45%',
-    border: '1pt solid #1C243A',
-    padding: 5,
+    width: 100,
+    height: 35,
+    border: '1pt solid #808080',
+    marginLeft: 10,
   },
   signatureTitle: {
     textAlign: 'center',
     marginBottom: 5,
-    color: '#1C243A',
+    color: '#808080',
     fontSize: 10,
     fontWeight: 'bold',
   },
@@ -132,11 +132,101 @@ const styles = StyleSheet.create({
     objectFit: 'contain',
   },
   footer: {
-    marginTop: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    backgroundColor: 'white',
+    marginTop: 5,
+    marginBottom: 15,
+  },
+  footerLeft: {
+    width: '40%',
+  },
+  footerRight: {
+    width: '50%',
+    border: '1pt solid #808080',
+  },
+  logo: {
+    width: 150,
+    marginBottom: 10,
+  },
+  companyInfo: {
+    fontSize: 10,
+    lineHeight: 1.5,
+  },
+  signRow: {
+    flexDirection: 'row',
+    borderBottom: '1pt solid #808080',
+    minHeight: 40,
+    alignItems: 'center',
+  },
+  signLabel: {
+    width: '25%',
+    backgroundColor: '#808080',
+    color: 'white',
+    padding: 20,
+    fontSize: 10,
+    fontWeight: 'bold',
+    textAlign: 'left',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  signContent: {
+    flex: 1,
+    padding: 8,
+    fontSize: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  imagesContainer: {
+    marginTop: 10,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 0,
+  },
+  imageWrapper: {
+    width: '50%',
+    padding: 5,
+    height: 200,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  image: {
+    maxWidth: '100%',
+    maxHeight: '100%',
+    objectFit: 'contain',
+  },
+  imageCaption: {
+    fontSize: 10,
     textAlign: 'center',
-    color: '#1C243A',
+    marginTop: 4,
+    color: '#666',
+  },
+  sectionTitle: {
+    fontSize: 10,
+    backgroundColor: '#808080',
+    color: 'white',
+    padding: 5,
+    marginBottom: 5,
+    fontFamily: 'Pretendard',
+    fontWeight: 'bold', 
+  },
+  lastRow: {
+    flexDirection: 'row',
+    borderBottom: '1pt solid #808080',
+    minHeight: 60,
+  },
+  websiteInfo: {
+    textAlign: 'center',
+    fontSize: 8,
+    color: '#666666',
+    marginBottom: 10,
   },
 });
+
 
 const FireSafetyInspectionPDF = ({ inspection }) => {
   const formatDate = (dateString) => {
@@ -154,17 +244,21 @@ const FireSafetyInspectionPDF = ({ inspection }) => {
         <View style={styles.header}>
           <View style={styles.headerRow}>
             <Text style={styles.headerCell}>건물명</Text>
-            <Text style={[styles.headerValue, { width: '75%' }]}>{inspection.buildingName}</Text>
+            <Text style={[styles.headerValue, { width: '30%' }]}>{inspection.buildingName}</Text>
+            <Text style={styles.headerCell}>점검일자</Text>
+            <Text style={[styles.headerValue, { width: '30%' }]}>{formatDate(inspection.inspectionDate)}</Text>
           </View>
           <View style={styles.headerRow}>
             <Text style={styles.headerCell}>주소</Text>
-            <Text style={[styles.headerValue, { width: '75%' }]}>{inspection.address}</Text>
+            <Text style={[styles.headerValue, { width: '80%' }]}>{inspection.address}</Text>
           </View>
           <View style={styles.headerRow}>
-            <Text style={styles.headerCell}>점검일자</Text>
-            <Text style={styles.headerValue}>{formatDate(inspection.inspectionDate)}</Text>
+            <Text style={styles.headerCell}>점검업체명</Text>
+            <Text style={[styles.headerValue, { width: '30%' }]}>{inspection.companyName}</Text>
             <Text style={styles.headerCell}>건물등급</Text>
-            <Text style={styles.headerValue}>{inspection.buildingGrade}</Text>
+            <Text style={[styles.headerValue, { width: '30%' }]}>
+              {inspection.buildingGrade ? `${inspection.buildingGrade}등급` : ''}
+            </Text>
           </View>
         </View>
 
@@ -215,7 +309,7 @@ const FireSafetyInspectionPDF = ({ inspection }) => {
                 </Text>
               </View>
             </View>
-            <View style={[styles.inspectionRow, { borderBottom: 'none' }]}>
+            <View style={styles.lastRow}>
               <Text style={styles.inspectionLabel}>기타</Text>
               <View style={styles.inspectionValue}>
                 <Text style={styles.valueText}>
@@ -226,28 +320,80 @@ const FireSafetyInspectionPDF = ({ inspection }) => {
           </View>
         </View>
 
-        {/* 서명 섹션 */}
-        <View style={styles.signatureSection}>
-          <View style={styles.signatureBox}>
-            <Text style={styles.signatureTitle}>점검자</Text>
-            {inspection.inspectorSignature && (
-              <Image style={styles.signatureImage} src={inspection.inspectorSignature} />
-            )}
+        {/* 푸터 */}
+        <View style={styles.footer}>
+          <View style={styles.footerLeft}>
+            <Image 
+              src={process.env.PUBLIC_URL + '/images/sobang.png'} 
+              style={styles.logo} 
+            />
+            <Text style={styles.companyInfo}>(주) 강동소방</Text>
+            <Text style={styles.companyInfo}>대전 서구 대덕대로 141 (갈마동) 2층, 201호(수정빌딩)</Text>
+            <Text style={styles.companyInfo}>Tel: 0507-1343-1190  Fax: 0507-1343-1190</Text>
           </View>
-          <View style={styles.signatureBox}>
-            <Text style={styles.signatureTitle}>관리자</Text>
-            {inspection.managerSignature && (
-              <Image style={styles.signatureImage} src={inspection.managerSignature} />
-            )}
+          <View style={styles.footerRight}>
+            <View style={styles.signRow}>
+              <Text style={styles.signLabel}>관계자</Text>
+              <View style={styles.signContent}>
+                <Text>성 명 :</Text>
+                <View style={styles.signatureBox}>
+                  {inspection.managerSignature && (
+                    <Image 
+                      src={inspection.managerSignature} 
+                      style={{ width: '100%', height: '100%' }} 
+                    />
+                  )}
+                </View>
+              </View>
+            </View>
+            <View style={styles.signRow}>
+              <Text style={styles.signLabel}>점검{'\n'}담당자</Text>
+              <View style={styles.signContent}>
+                <Text>담 당 자 : {inspection.inspectorName}</Text>
+                <View style={styles.signatureBox}>
+                  {inspection.inspectorSignature && (
+                    <Image 
+                      src={inspection.inspectorSignature} 
+                      style={{ width: '100%', height: '100%' }} 
+                    />
+                  )}
+                </View>
+              </View>
+            </View>
           </View>
         </View>
 
-        {/* 푸터 */}
-        <View style={styles.footer}>
-          <Text>소방시설 점검업체: {inspection.companyName}</Text>
-        </View>
+        {/* 문의 웹사이트 정보 */}
+        <Text style={styles.websiteInfo}>
+          문의 www.oasyss.co.kr
+        </Text>
+
+        {/* 이미지 섹션 */}
+        <ImagesSection attachments={inspection.attachments} />
       </Page>
     </Document>
+  );
+};
+
+// 이미지 섹션 컴포넌트 수정
+const ImagesSection = ({ attachments }) => {
+  if (!attachments || attachments.length === 0) return null;
+
+  return (
+    <View style={styles.section} break>
+      <Text style={styles.sectionTitle}>현장 사진</Text>
+      <View style={styles.imagesContainer}>
+        {attachments.map((image, index) => (
+          <View key={index} style={styles.imageWrapper}>
+            <Image
+              src={`http://localhost:8080/uploads/fire-safety-images/${image}`}
+              style={styles.image}
+            />
+            <Text style={styles.imageCaption}>현장사진 {index + 1}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
   );
 };
 

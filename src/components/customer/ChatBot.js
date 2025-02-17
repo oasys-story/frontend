@@ -21,8 +21,8 @@ const ChatBot = () => {
 
   // 대화 메시지 상태 관리
   const [messages, setMessages] = useState(() => {
-    // localStorage에서 채팅 기록 불러오기
-    const savedMessages = localStorage.getItem('chatMessages');
+    // sessionStorage에서 채팅 기록 불러오기
+    const savedMessages = sessionStorage.getItem('chatMessages');
     // 저장된 메시지가 있으면 그대로 사용, 없으면 초기 메시지만 표시
     return savedMessages ? JSON.parse(savedMessages) : [initialMessage];
   });
@@ -30,9 +30,9 @@ const ChatBot = () => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // 대화 메시지 변경 시 localStorage에 저장
+  // 대화 메시지 변경 시 sessionStorage에 저장
   useEffect(() => {
-    localStorage.setItem('chatMessages', JSON.stringify(messages));
+    sessionStorage.setItem('chatMessages', JSON.stringify(messages));
   }, [messages]);
 
   // 메시지 전송 처리
@@ -51,7 +51,7 @@ const ChatBot = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
         },
         body: JSON.stringify({ question: userMessage })
       });
@@ -83,7 +83,7 @@ const ChatBot = () => {
   const handleNewChat = () => {
     if (window.confirm('새로운 대화를 시작하시겠습니까?')) {
       setMessages([initialMessage]);  // 초기 메시지만 남기고 초기화
-      localStorage.removeItem('chatMessages');
+      sessionStorage.removeItem('chatMessages');
     }
   };
 

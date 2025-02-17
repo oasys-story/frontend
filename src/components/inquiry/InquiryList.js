@@ -16,7 +16,11 @@ import {
   Stack,
   Pagination,
   Snackbar,
-  Alert
+  Alert,
+  FormControl,   
+  InputLabel,    
+  Select,       
+  MenuItem       
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
@@ -25,6 +29,7 @@ import InquiryDialog from './InquiryDialog';
 const InquiryList = () => {
   const [inquiries, setInquiries] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState('latest'); // 기본값: 최신순
   const [filteredInquiries, setFilteredInquiries] = useState([]);
   const [page, setPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -50,22 +55,52 @@ const InquiryList = () => {
   }, []);
 
   useEffect(() => {
-    const filtered = inquiries.filter(inquiry =>
-      inquiry.inquiryTitle.toLowerCase().includes(searchTerm.toLowerCase())
+    let filtered = inquiries.filter(inquiry =>
+      (inquiry.inquiryTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       String(inquiry.writerName).includes(searchTerm))
     );
+  
+    const now = new Date();
+    switch (dateFilter) {
+      case 'oldest':
+        filtered.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        break;
+      case 'latest':
+        filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        break;
+      case 'week':
+        filtered = filtered.filter(inquiry => {
+          const inquiryDate = new Date(inquiry.createdAt);
+          return now - inquiryDate <= 7 * 24 * 60 * 60 * 1000;
+        });
+        break;
+      case 'month':
+        filtered = filtered.filter(inquiry => {
+          const inquiryDate = new Date(inquiry.createdAt);
+          return now - inquiryDate <= 30 * 24 * 60 * 60 * 1000;
+        });
+        break;
+      default:
+        break;
+    }
+  
     setFilteredInquiries(filtered);
     setPage(1);
-  }, [searchTerm, inquiries]);
+  }, [searchTerm, dateFilter, inquiries]);
 
   const fetchInquiries = async () => {
     try {
       const response = await fetch('http://localhost:8080/api/inquiries', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
         }
       });
       if (response.ok) {
-        const data = await response.json();
+        let data = await response.json();
+        
+        // inquiryId 기준 내림차순 정렬 (최신 글이 앞에 오도록)
+        data.sort((a, b) => b.inquiryId - a.inquiryId);
+  
         setInquiries(data);
         setFilteredInquiries(data);
       }
@@ -73,6 +108,7 @@ const InquiryList = () => {
       console.error('문의사항 목록 로딩 실패:', error);
     }
   };
+  
 
   const handlePageChange = (event, value) => {
     setPage(value);
@@ -100,13 +136,17 @@ const InquiryList = () => {
   };
 
   const handleAddInquiryClick = () => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (!token) {
       setSnackbar({
         open: true,
         message: '로그인 후 이용해 주세요.',
         severity: 'warning'
       });
+      
+      // 커스텀 이벤트를 발생시켜 로그인 다이얼로그를 표시
+      const event = new CustomEvent('openLoginDialog');
+      window.dispatchEvent(event);
       return;
     }
     setDialogOpen(true);
@@ -134,23 +174,37 @@ const InquiryList = () => {
       </Box>
 
       <Box sx={{ mt: 6 }}>
-        {/* 검색창 */}
-        <TextField
-          size="small"
-          fullWidth
-          variant="outlined"
-          placeholder="문의사항 검색"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          sx={{ mb: 2 }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon color="action" />
-              </InputAdornment>
-            ),
-          }}
-        />
+{/* 검색창 & 날짜 필터 추가 */}
+<Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+  <TextField
+    size="small"
+    variant="outlined"
+    placeholder="제목 또는 ID 검색"
+    value={searchTerm}
+    onChange={(e) => setSearchTerm(e.target.value)}
+    sx={{ width: '70%' }} // 7:3 비율 유지
+    InputProps={{
+      startAdornment: (
+        <InputAdornment position="start">
+          <SearchIcon color="action" />
+        </InputAdornment>
+      ),
+    }}
+  />
+  
+  <FormControl size="small" sx={{ width: '30%' }}>
+    <InputLabel>날짜 필터</InputLabel>
+    <Select
+      value={dateFilter}
+      onChange={(e) => setDateFilter(e.target.value)}
+    >
+      <MenuItem value="latest">최신 순</MenuItem>
+      <MenuItem value="oldest">오래된 순</MenuItem>
+      <MenuItem value="week">1주일 내 내역</MenuItem>
+      <MenuItem value="month">1달 내 내역</MenuItem>
+    </Select>
+  </FormControl>
+</Box>
 
         {/* 문의사항 목록 테이블 */}
         <TableContainer component={Paper} sx={{ mb: 2, boxShadow: 'none' }}>

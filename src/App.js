@@ -12,6 +12,9 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { StyledEngineProvider } from '@mui/material/styles';
 import ScheduleManagement from './pages/ScheduleManagement';
 import FireSafetyInspectionForm from './components/fireSafetyInspection/FireSafetyInspectionForm';
+import ServicePreparingPage from './components/common/ServicePreparingPage';
+import ProtectedRoute from './components/common/ProtectedRoute';
+import AdminInquiryList from './components/inquiry/AdminInquiryList';
 
 // 지연 로딩할 컴포넌트들
 const Settings = React.lazy(() => import('./components/settings/Settings'));
@@ -31,6 +34,16 @@ const CustomerCenter = React.lazy(() => import('./components/customer/CustomerCe
 const FireSafetyInspectionResult = React.lazy(() => import('./components/fireSafetyInspection/FireSafetyInspectionResult'));
 const FireSafetyInspectionList = React.lazy(() => import('./components/fireSafetyInspection/FireSafetyInspectionList'));
 const FireSafetyInspectionEdit = React.lazy(() => import('./components/fireSafetyInspection/FireSafetyInspectionEdit'));
+const OnboardingHome = React.lazy(() => import('./components/tutorial/OnboardingHome'));
+const SiteIntroTutorial = React.lazy(() => import('./components/tutorial/SiteIntroTutorial'));
+const SignUpTutorial = React.lazy(() => import('./components/tutorial/SignUpTutorial'));
+const ElectricalInspectionTutorial = React.lazy(() => import('./components/tutorial/ElectricalInspectionTutorial'));
+const FireInspectionTutorial = React.lazy(() => import('./components/tutorial/FireInspectionTutorial'));
+const InquiryTutorial = React.lazy(() => import('./components/tutorial/InquiryTutorial'));
+const PdfTutorial = React.lazy(() => import('./components/tutorial/PdfTutorial'));
+const InspectionResultTransmissionTutorial = React.lazy(() => import('./components/tutorial/InspectionResultTransmissionTutorial'));
+const KakaoAlertList = React.lazy(() => import('./components/alert/KakaoAlertList'));
+const GuestInquiryList = React.lazy(() => import('./components/inquiry/GuestInquiryList'));
 
 // 로딩 컴포넌트
 const LoadingFallback = () => (
@@ -86,9 +99,30 @@ function App() {
                   <Route path="/fire-safety-inspection/edit/:id" element={<FireSafetyInspectionForm />} />
                   <Route path="/fire-safety-inspection/:id" element={<FireSafetyInspectionResult />} />
                   <Route path="/fire-safety-inspections" element={<FireSafetyInspectionList />} />
+                  <Route path="/inspection/facility" element={<ServicePreparingPage />} />
+                  <Route path="/inspection/equipment" element={<ServicePreparingPage />} />
+                  <Route path="/tutorial-onboarding" element={<OnboardingHome />} />
+                  <Route path="/tutorial/tutorial-site-intro" element={<SiteIntroTutorial />} />
+                  <Route path="/tutorial/signup" element={<SignUpTutorial />} />
+                  <Route path="/tutorial/electrical-inspection" element={<ElectricalInspectionTutorial />} />
+                  <Route path="/tutorial/fire-inspection" element={<FireInspectionTutorial />} />
+                  <Route path="/tutorial/inquiry" element={<InquiryTutorial />} />
+                  <Route path="/tutorial/pdf" element={<PdfTutorial />} />
+                  <Route path="/tutorial/send-results" element={<InspectionResultTransmissionTutorial />} />
+                  <Route path="/kakao-alert-list" element={<KakaoAlertList />} />
+                  <Route path="/guest-inquiries" element={<GuestInquiryList />} />
+                  <Route 
+                    path="/admin/inquiries" 
+                    element={
+                      <ProtectedRoute roleRequired="ADMIN">
+                        <AdminInquiryList />
+                      </ProtectedRoute>
+                    } 
+                  />
                 </Routes>
               </Suspense>
             </Box>
+
           </LocalizationProvider>
         </ThemeProvider>
       </Router>

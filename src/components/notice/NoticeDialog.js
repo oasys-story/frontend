@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
 import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
+// import DeleteIcon from '@mui/icons-material/Delete';
 import ClearIcon from '@mui/icons-material/Clear';
 
 const NoticeDialog = ({ open, onClose, notice, onDelete, onUpdate }) => {
@@ -27,7 +27,7 @@ const NoticeDialog = ({ open, onClose, notice, onDelete, onUpdate }) => {
   const [editedNotice, setEditedNotice] = useState(null);
   const [selectedImages, setSelectedImages] = useState([]);
   const [newImages, setNewImages] = useState([]);
-  const currentUserId = parseInt(localStorage.getItem('userId'));
+  const currentUserId = parseInt(sessionStorage.getItem('userId'));
   const isAuthor = notice?.writerId === currentUserId;
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [snackbar, setSnackbar] = useState({
@@ -88,7 +88,7 @@ const NoticeDialog = ({ open, onClose, notice, onDelete, onUpdate }) => {
       const response = await fetch(`http://localhost:8080/api/notices/${notice.noticeId}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
         },
         body: formData
       });
@@ -121,7 +121,7 @@ const NoticeDialog = ({ open, onClose, notice, onDelete, onUpdate }) => {
         const response = await fetch(`http://localhost:8080/api/notices/${notice.noticeId}`, {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${sessionStorage.getItem('token')}`
           }
         });
 
@@ -180,9 +180,9 @@ const NoticeDialog = ({ open, onClose, notice, onDelete, onUpdate }) => {
               <IconButton size="small" onClick={handleEditClick}>
                 <EditIcon />
               </IconButton>
-              <IconButton size="small" onClick={handleDelete}>
+              {/* <IconButton size="small" onClick={handleDelete}>
                 <DeleteIcon />
-              </IconButton>
+              </IconButton> */}
             </Box>
           )}
         </DialogTitle>

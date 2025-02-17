@@ -18,6 +18,8 @@ import Carousel from 'react-material-ui-carousel';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import NoticeDetailModal from './notice/NoticeDetailModal';
 import InquiryDetailModal from './inquiry/InquiryDetailModal';
+import HomeChatBot from './customer/HomeChatBot';
+import ContactForm from './common/ContactForm';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -32,15 +34,16 @@ const Home = () => {
   // 캐러셀 아이템
   const carouselItems = [
     {
-      image: "/images/safe2.png",
-      title: "안전한 작업환경 구축",
-      description: "최고의 안전 관리 시스템"
+      image: "/images/inspection.jpg",
+      title: "정밀 안전 점검",
+      description: "현장 점검부터 결과 확인까지 \n 신뢰할 수 있는 데이터를 제공합니다."
     },
     {
-      image: "/images/safe.png",
-      title: "24시간 모니터링",
-      description: "실시간 안전 점검"
-    },
+      image: "/images/inspection2.jpg",
+      title: "즉각적인 결과 피드백",
+      description: "점검 후 바로 안전 결과를 확인하고 \n 필요한 조치를 취하세요."
+    }
+    
   ];
 
   useEffect(() => {
@@ -54,7 +57,7 @@ const Home = () => {
       const response = await fetch('http://localhost:8080/api/notices');
       if (response.ok) {
         const data = await response.json();
-        setNotices(data.slice(0, 4));
+        setNotices(data.slice(0, 3));
       }
     } catch (error) {
       console.error('공지사항 로딩 실패:', error);
@@ -66,7 +69,7 @@ const Home = () => {
       const response = await fetch('http://localhost:8080/api/inquiries');
       if (response.ok) {
         const data = await response.json();
-        setInquiries(data.slice(0, 4)); // 최근 4개만
+        setInquiries(data.slice(0, 3)); // 최근 4개만
       }
     } catch (error) {
       console.error('문의사항 로딩 실패:', error);
@@ -100,13 +103,15 @@ const Home = () => {
   };
 
   return (
-    <Box sx={{ 
+    <Box   sx={{
       maxWidth: '430px',
       margin: '0 auto',
-      minHeight: '100vh',
+      minHeight: '100vh', // ✅ 여기 수정 (maxHeight → minHeight)
       background: 'linear-gradient(to bottom, #FFFFFF, #F8F9FA)',
       boxShadow: '0px 0px 20px rgba(0,0,0,0.1)',
-      position: 'relative'
+      position: 'relative',
+      display: 'flex',
+      flexDirection: 'column', // 🛠️ 내용을 세로로 정렬
     }}>
       {/* 상단 로고 영역 */}
       <AppBar 
@@ -121,7 +126,7 @@ const Home = () => {
         <Toolbar sx={{ justifyContent: 'center', minHeight: '60px' }}>
           <Box
             component="img"
-            src="/images/oasys.png"
+            src="/images/dawoo2.png"
             alt="로고"
             sx={{
               height: '50px',
@@ -170,6 +175,7 @@ const Home = () => {
                   backgroundImage: `url(${item.image})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
+                  whiteSpace: 'pre-line',
                   '&::before': {
                     content: '""',
                     position: 'absolute',
@@ -394,6 +400,64 @@ const Home = () => {
         </Grid>
       </Box>
 
+
+      {/* 회사 정보 (하단 고정 X, 페이지 최하단에만 위치) */}
+      <Box
+      sx={{
+        backgroundColor: '#fff',
+        py: 3,
+        px: 2,
+        textAlign: 'center',
+        borderTop: '1px solid #ddd',
+        mt: 4,
+      }}
+    >
+      {/* 회사 로고 */}
+      <Box
+        component="img"
+        src="/images/dawoo.png"
+        alt="회사 로고"
+        sx={{
+          height: 40,
+          display: 'block',
+          margin: '0 auto',
+        }}
+      />
+      
+      {/* 회사 정보 */}
+      <Typography
+        variant="body2"
+        sx={{ fontWeight: 'bold', color: '#333', fontSize: '0.75rem' , mt: 0.5}}
+      >
+        (주) 다우
+      </Typography>
+      <Typography variant="body2" sx={{ color: '#666', fontSize: '0.7rem', mt: 0.5 }}>
+      대전광역시 서구 계룡로 553번안길 63
+      </Typography>
+      <Typography variant="body2" sx={{ color: '#666', fontSize: '0.7rem', mt: 0.5 }}>
+      TEL: 042) 526-4805 | FAX: 042) 526-4806
+      </Typography>
+
+
+      {/* 사용문의 문구와 링크 */}
+      <Typography variant="body2" sx={{ color: '#666', fontSize: '0.75rem', mt: 1 }}>
+        사용문의{' '}
+        <Link
+          href="http://www.keyless.kr"
+          underline="hover"
+          sx={{ fontWeight: 'bold', color: '#666' }}
+          target="_blank"
+          rel="noopener"
+        >
+          www.keyless.kr
+        </Link>
+      </Typography>
+    </Box>
+
+      {/* 챗봇 추가 */}
+      {/* <HomeChatBot /> */}
+
+    {/* 모달 */}
       <InquiryDetailModal 
         open={openInquiryModal}
         inquiry={selectedInquiry}
@@ -405,6 +469,9 @@ const Home = () => {
         notice={selectedNotice}
         onClose={handleCloseModal}
       />
+
+      {/* 문의하기 컴포넌트 추가 */}
+      <ContactForm />
     </Box>
   );
 };

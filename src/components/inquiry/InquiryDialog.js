@@ -19,13 +19,13 @@ import {
   Alert
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
+// import DeleteIcon from '@mui/icons-material/Delete';
 import ClearIcon from '@mui/icons-material/Clear';
 import { styled } from '@mui/material/styles';
-import ImageList from '@mui/material/ImageList';
-import ImageListItem from '@mui/material/ImageListItem';
-import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
-import BuildIcon from '@mui/icons-material/Build';
+// import ImageList from '@mui/material/ImageList';
+// import ImageListItem from '@mui/material/ImageListItem';
+// import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
+// import BuildIcon from '@mui/icons-material/Build';
 
 // 스타일링된 컴포넌트
 const InquirySection = styled(Paper)(({ theme }) => ({
@@ -53,9 +53,10 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
     contactNumber: '',
     images: []
   });
-  const currentUserId = parseInt(localStorage.getItem('userId'));
+  const currentUserId = parseInt(sessionStorage.getItem('userId'));
   const isAuthor = inquiry?.writerId === currentUserId;
-  const isAdmin = localStorage.getItem('role')?.toUpperCase() === 'ADMIN';
+  const isAdminOrManager = sessionStorage.getItem('role')?.toUpperCase() === 'ADMIN' || 
+                        sessionStorage.getItem('role')?.toUpperCase() === 'MANAGER';
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -63,6 +64,10 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
     open: false,
     message: '',
     severity: 'success'
+  });
+  const [formErrors, setFormErrors] = useState({
+    title: false,
+    content: false
   });
 
   // 초기 상태 정의
@@ -145,7 +150,7 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
       }
 
       // ADMIN만 처리상태 관련 필드 수정 가능
-      if (isAdmin) {
+      if (isAdminOrManager) {
         // processed가 undefined일 경우 기본값 false 설정
         const processedValue = editedInquiry.processed !== undefined ? editedInquiry.processed : false;
         formData.append('processed', processedValue.toString());
@@ -163,13 +168,13 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
       // for (let pair of formData.entries()) {
       //   console.log(pair[0] + ': ' + pair[1]);
       // }
-      // console.log('Is Admin:', isAdmin);
+      // console.log('Is Admin:', isAdminOrManager);
       // console.log('Edited Inquiry:', editedInquiry);
 
       const response = await fetch(`http://localhost:8080/api/inquiries/${inquiry.inquiryId}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
         },
         body: formData
       });
@@ -202,7 +207,7 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
         const response = await fetch(`http://localhost:8080/api/inquiries/${inquiry.inquiryId}`, {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${sessionStorage.getItem('token')}`
           }
         });
 
@@ -237,12 +242,22 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
 
   // 등록 모드 핸들러
   const handleCreate = async () => {
+    // 유효성 검사 추가
+    if (!newInquiry.inquiryTitle.trim() || !newInquiry.inquiryContent.trim()) {
+      setFormErrors({
+        title: !newInquiry.inquiryTitle.trim(),
+        content: !newInquiry.inquiryContent.trim()
+      });
+      alert('제목과 문의내용을 모두 입력해주세요.');
+      return;
+    }
+
     try {
       const formData = new FormData();
       formData.append('inquiryTitle', newInquiry.inquiryTitle);
       formData.append('inquiryContent', newInquiry.inquiryContent);
       formData.append('contactNumber', newInquiry.contactNumber);
-      formData.append('userId', localStorage.getItem('userId'));
+      formData.append('userId', sessionStorage.getItem('userId'));
 
       newInquiry.images.forEach(image => {
         formData.append('images', image);
@@ -251,7 +266,7 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
       const response = await fetch('http://localhost:8080/api/inquiries', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
         },
         body: formData
       });
@@ -313,22 +328,22 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
           pb: 1
         }}>
           {!inquiry ? (
-            <Typography variant="h6">문의사항 등록</Typography>
+            "문의사항 등록"
           ) : !isEditing ? (
-            <Typography variant="h6">{inquiry.inquiryTitle}</Typography>
+            inquiry.inquiryTitle
           ) : (
-            <Typography variant="h6">문의사항 수정</Typography>
+            "문의사항 수정"
           )}
           
-          {/* 작성자나 관리자만 수정/삭제 버튼 표시 */}
-          {(isAuthor || isAdmin) && !isEditing && (
+          {/* 작성자나 관리자만 수정/삭제 버튼 표시 && 등록 모드가 아닐 때만 표시 */}
+          {inquiry && (isAuthor || isAdminOrManager) && !isEditing && (
             <Box>
               <IconButton onClick={handleEditClick}>
                 <EditIcon />
               </IconButton>
-              <IconButton onClick={handleDelete}>
+              {/* <IconButton onClick={handleDelete}>
                 <DeleteIcon />
-              </IconButton>
+              </IconButton> */}
             </Box>
           )}
         </DialogTitle>
@@ -342,10 +357,16 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
                   fullWidth
                   label="제목"
                   value={newInquiry.inquiryTitle}
-                  onChange={(e) => setNewInquiry({
-                    ...newInquiry,
-                    inquiryTitle: e.target.value
-                  })}
+                  onChange={(e) => {
+                    setNewInquiry({
+                      ...newInquiry,
+                      inquiryTitle: e.target.value
+                    });
+                    setFormErrors(prev => ({...prev, title: false}));
+                  }}
+                  error={formErrors.title}
+                  helperText={formErrors.title ? "제목을 입력해주세요" : ""}
+                  required
                 />
               </Grid>
               <Grid item xs={12}>
@@ -355,10 +376,16 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
                   rows={4}
                   label="문의내용"
                   value={newInquiry.inquiryContent}
-                  onChange={(e) => setNewInquiry({
-                    ...newInquiry,
-                    inquiryContent: e.target.value
-                  })}
+                  onChange={(e) => {
+                    setNewInquiry({
+                      ...newInquiry,
+                      inquiryContent: e.target.value
+                    });
+                    setFormErrors(prev => ({...prev, content: false}));
+                  }}
+                  error={formErrors.content}
+                  helperText={formErrors.content ? "문의내용을 입력해주세요" : ""}
+                  required
                 />
               </Grid>
               <Grid item xs={12}>
@@ -585,8 +612,8 @@ const InquiryDialog = ({ open, onClose, inquiry, onDelete, onUpdate }) => {
                 )}
               </Grid>
 
-              {/* ADMIN 전용 필드들 */}
-              {isAdmin && (
+              {/* ADMIN/MANAGER 전용 필드들 */}
+              {isAdminOrManager && (
                 <>
                   <Grid item xs={12}>
                     <FormControlLabel

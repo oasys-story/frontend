@@ -11,7 +11,9 @@ import {
   Button,
   FormControlLabel,
   Switch,
-  Stack
+  Stack,
+  DialogContent,
+  Divider
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 
@@ -29,16 +31,26 @@ const UserManagement = () => {
     active: true
   });
   const [companies, setCompanies] = useState([]);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordErrors, setPasswordErrors] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
 
   // ADMIN 권한 체크
-  const isAdmin = localStorage.getItem('role')?.toUpperCase() === 'ADMIN';
+  const isAdmin = sessionStorage.getItem('role')?.toUpperCase() === 'ADMIN';
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const response = await fetch(`http://localhost:8080/api/users/${userId}`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${sessionStorage.getItem('token')}`
           }
         });
         if (response.ok) {
@@ -54,7 +66,7 @@ const UserManagement = () => {
       try {
         const response = await fetch('http://localhost:8080/api/companies', {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${sessionStorage.getItem('token')}`
           }
         });
         if (response.ok) {
@@ -77,6 +89,44 @@ const UserManagement = () => {
     e.preventDefault();
     
     try {
+      // 비밀번호 변경이 있는 경우
+      if (passwordData.newPassword) {
+        // 새 비밀번호 확인 검증
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+          setPasswordErrors(prev => ({...prev, confirmPassword: '새 비밀번호가 일치하지 않습니다'}));
+          return;
+        }
+
+        // 현재 비밀번호 검증
+        if (!passwordData.currentPassword) {
+          setPasswordErrors(prev => ({...prev, currentPassword: '현재 비밀번호를 입력해주세요'}));
+          return;
+        }
+
+        // 비밀번호 변경 API 호출
+        const passwordResponse = await fetch(`http://localhost:8080/api/users/${userId}/password`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+          },
+          body: JSON.stringify({
+            currentPassword: passwordData.currentPassword,
+            newPassword: passwordData.newPassword
+          })
+        });
+
+        if (!passwordResponse.ok) {
+          const errorData = await passwordResponse.json();
+          setPasswordErrors(prev => ({
+            ...prev,
+            currentPassword: errorData.message || '비밀번호 변경에 실패했습니다.'
+          }));
+          return;
+        }
+      }
+
+      // 기존의 사용자 정보 업데이트 로직
       const selectedCompany = companies.find(c => c.companyName === user.companyName);
       
       const updateData = {
@@ -92,13 +142,24 @@ const UserManagement = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
         },
         body: JSON.stringify(updateData)
       });
 
       if (response.ok) {
         alert('사용자 정보가 수정되었습니다.');
+        // 성공 시 비밀번호 필드 초기화
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+        setPasswordErrors({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
       } else {
         alert('사용자 정보 수정에 실패했습니다.');
       }
@@ -120,7 +181,7 @@ const UserManagement = () => {
         const response = await fetch(`http://localhost:8080/api/users/${userId}`, {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${sessionStorage.getItem('token')}`
           }
         });
 
@@ -238,6 +299,69 @@ const UserManagement = () => {
               sx={{ mt: 1 }}
             />
 
+            {/* 비밀번호 변경 필드 추가 */}
+            <Divider sx={{ my: 2 }} />
+            <Typography variant="subtitle1" sx={{ mb: 1 }}>비밀번호 변경</Typography>
+            
+            <TextField
+              fullWidth
+              type="password"
+              label="현재 비밀번호"
+              value={passwordData.currentPassword}
+              onChange={(e) => {
+                setPasswordData({...passwordData, currentPassword: e.target.value});
+                setPasswordErrors({...passwordErrors, currentPassword: ''});
+              }}
+              error={Boolean(passwordErrors.currentPassword)}
+              helperText={passwordErrors.currentPassword}
+              margin="normal"
+            />
+            
+            <TextField
+              fullWidth
+              type="password"
+              label="새 비밀번호"
+              value={passwordData.newPassword}
+              onChange={(e) => {
+                const value = e.target.value;
+                let errorMessage = '';
+
+                if (value.length > 0 && value.length < 4) {
+                  errorMessage = '새 비밀번호는 4자 이상이어야 합니다.';
+                } else if (/\s/.test(value)) {
+                  errorMessage = '새 비밀번호에는 공백이 포함될 수 없습니다.';
+                }
+
+                setPasswordData({ ...passwordData, newPassword: value });
+                setPasswordErrors({ ...passwordErrors, newPassword: errorMessage });
+              }}
+              error={Boolean(passwordErrors.newPassword)}
+              helperText={passwordErrors.newPassword}
+              margin="normal"
+            />
+
+            <TextField
+              fullWidth
+              type="password"
+              label="새 비밀번호 확인"
+              value={passwordData.confirmPassword}
+              onChange={(e) => {
+                const value = e.target.value;
+                let errorMessage = '';
+
+                if (value !== passwordData.newPassword) {
+                  errorMessage = '새 비밀번호가 일치하지 않습니다.';
+                }
+
+                setPasswordData({ ...passwordData, confirmPassword: value });
+                setPasswordErrors({ ...passwordErrors, confirmPassword: errorMessage });
+              }}
+              error={Boolean(passwordErrors.confirmPassword)}
+              helperText={passwordErrors.confirmPassword}
+              margin="normal"
+            />
+
+
             {/* 버튼 그룹 */}
             <Box sx={{ 
               display: 'flex', 
@@ -271,7 +395,7 @@ const UserManagement = () => {
               >
                 목록
               </Button>
-              {isAdmin && (
+              {/* {isAdmin && (
                 <Button 
                   variant="outlined"
                   onClick={handleDelete}
@@ -288,7 +412,7 @@ const UserManagement = () => {
                 >
                   삭제
                 </Button>
-              )}
+              )} */}
             </Box>
           </Stack>
         </form>
