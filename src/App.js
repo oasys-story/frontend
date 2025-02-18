@@ -15,6 +15,9 @@ import FireSafetyInspectionForm from './components/fireSafetyInspection/FireSafe
 import ServicePreparingPage from './components/common/ServicePreparingPage';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import AdminInquiryList from './components/inquiry/AdminInquiryList';
+import ContractList from './components/contract/ContractList';
+import ContractUpload from './components/contract/ContractUpload';
+import ContractDetail from './components/contract/ContractDetail';
 
 // 지연 로딩할 컴포넌트들
 const Settings = React.lazy(() => import('./components/settings/Settings'));
@@ -116,6 +119,30 @@ function App() {
                     element={
                       <ProtectedRoute roleRequired="ADMIN">
                         <AdminInquiryList />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/contracts" 
+                    element={
+                      <ProtectedRoute>
+                        <ContractList />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/contracts/:id"
+                    element={
+                      <ProtectedRoute>
+                        <ContractDetail />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/contract/upload" 
+                    element={
+                      <ProtectedRoute>
+                        <ContractUpload />
                       </ProtectedRoute>
                     } 
                   />

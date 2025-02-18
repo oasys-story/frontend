@@ -23,6 +23,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import EditIcon from '@mui/icons-material/Edit';
+import DescriptionIcon from '@mui/icons-material/Description';
 
 
 
@@ -85,7 +86,8 @@ const Sidebar = () => {
         { text: '공지사항', path: '/notices' },
         { text: '문의사항', path: '/inquiries' },
         { text: '고객센터', path: '/customer' },
-        { text: '비회원 문의', path: '/guest-inquiries' }
+        { text: '비회원 문의', path: '/guest-inquiries' },
+        { text: '계약서 관리', path: '/contracts' }
       ]
     },
     // 관리자 메뉴 (ADMIN과 MANAGER만 볼 수 있음)
@@ -100,6 +102,7 @@ const Sidebar = () => {
         // { text: '설정', path: '/settings/dashboard' }
       ]
     }] : []),
+
   ];
 
   const toggleDrawer = (open) => (event) => {

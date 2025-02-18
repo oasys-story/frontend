@@ -340,7 +340,7 @@ const CompanyManagement = () => {
         </Typography>
       </Box>
 
-      <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit}>
         <Box sx={{ 
           display: 'flex', 
           flexDirection: 'column', 
@@ -410,13 +410,13 @@ const CompanyManagement = () => {
               검색
             </Button>
           </Box>
-
-          <TextField
-            label="연락처"
-            value={company.phoneNumber || ''}
-            onChange={(e) => setCompany({ ...company, phoneNumber: e.target.value })}
-            fullWidth
-            size="small"
+            
+            <TextField
+              label="연락처"
+              value={company.phoneNumber || ''}
+              onChange={(e) => setCompany({ ...company, phoneNumber: e.target.value })}
+              fullWidth
+              size="small"
             sx={{
               '& .MuiOutlinedInput-root': {
                 bgcolor: '#f8f9fa',
@@ -550,10 +550,10 @@ const CompanyManagement = () => {
               value={company.contractDate ? new Date(company.contractDate) : null}
               onChange={(date) => setCompany({ ...company, contractDate: date })}
               renderInput={(params) => (
-                <TextField 
+            <TextField
                   {...params} 
-                  fullWidth 
-                  size="small"
+              fullWidth
+              size="small"
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       bgcolor: '#f8f9fa',
@@ -575,10 +575,10 @@ const CompanyManagement = () => {
               value={company.startDate ? new Date(company.startDate) : null}
               onChange={(date) => setCompany({ ...company, startDate: date })}
               renderInput={(params) => (
-                <TextField 
+            <TextField
                   {...params} 
-                  fullWidth 
-                  size="small"
+              fullWidth
+              size="small"
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       bgcolor: '#f8f9fa',
@@ -790,7 +790,7 @@ const CompanyManagement = () => {
                 error={Boolean(newEmployee.name && !newEmployee.phone)}
                 helperText={newEmployee.name && !newEmployee.phone ? "핸드폰번호를 입력하세요" : " "}
               />
-              <Button
+              <Button 
                 variant="outlined"
                 startIcon={<AddIcon />}
                 onClick={handleAddEmployee}
@@ -837,28 +837,28 @@ const CompanyManagement = () => {
               }}
             >
               저장
-            </Button>
-            <Button 
-              variant="outlined"
-              onClick={() => navigate('/companies')}
-              sx={{ 
+              </Button>
+              <Button 
+                variant="outlined"
+                onClick={() => navigate('/companies')}
+                sx={{ 
                 minWidth: '120px',
                 color: '#343959',
                 borderColor: '#343959',
                 borderRadius: '10px',
                 py: 1.5,
-                '&:hover': {
-                  borderColor: '#3d63b8',
+                  '&:hover': {
+                    borderColor: '#3d63b8',
                   color: '#3d63b8',
                   bgcolor: 'rgba(61, 99, 184, 0.04)'
-                }
-              }}
-            >
-              목록
-            </Button>
-          </Box>
+                  }
+                }}
+              >
+                목록
+              </Button>
+            </Box>
         </Box>
-      </form>
+        </form>
 
     </Box>
   );
