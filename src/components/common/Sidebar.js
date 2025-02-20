@@ -72,11 +72,15 @@ const Sidebar = () => {
     },
     // 점검 관련 메뉴
     {
-      category: '점검',
+      category: '계약서 관리',
       items: [
-        ...(userRole !== 'USER' ? [{ text: '점검 시작하기', path: '/inspection', requireAuth: true }] : []),
-        { text: '전기 점검 목록', path: '/inspections', requireAuth: true },
-        { text: '소방 점검 목록', path: '/fire-safety-inspections', requireAuth: true }
+        { text: '계약서 관리', path: '/contracts' },
+      ]
+    },
+    {
+      category: '시설물 관리',
+      items: [
+        { text: '시설물 관리', path: '/facility' },
       ]
     },
     // 게시판 메뉴
@@ -87,7 +91,6 @@ const Sidebar = () => {
         { text: '문의사항', path: '/inquiries' },
         { text: '고객센터', path: '/customer' },
         { text: '비회원 문의', path: '/guest-inquiries' },
-        { text: '계약서 관리', path: '/contracts' }
       ]
     },
     // 관리자 메뉴 (ADMIN과 MANAGER만 볼 수 있음)
