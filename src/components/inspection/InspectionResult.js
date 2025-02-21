@@ -1135,6 +1135,24 @@ const InspectionResult = () => {
       >
         <DialogTitle>이메일 전송</DialogTitle>
         <DialogContent>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" sx={{ color: '#666', mb: 0.5 }}>
+              발송 이메일
+            </Typography>
+            <Typography 
+              variant="body1" 
+              sx={{ 
+                color: '#343959',
+                fontWeight: 500,
+                bgcolor: '#f8f9fa',
+                p: 1,
+                borderRadius: 1,
+                border: '1px solid #e0e0e0'
+              }}
+            >
+              bjh7340@naver.com
+            </Typography>
+          </Box>
           <DialogContentText sx={{ mb: 2 }}>
             점검 결과를 전송할 이메일 주소를 입력해주세요.
           </DialogContentText>
