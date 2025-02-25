@@ -12,17 +12,17 @@ import { useNavigate } from 'react-router-dom'; // useNavigate 추가
 const tutorialSteps = [
   {
     label: '점검 문의',
-    imgPath: '/images/intro-2.png', 
+    imgPath: '/images/first.png', 
     description: '현장에서 발생하는 문제나 궁금증을 게시판 형태로 쉽게 등록하여, 전문가의 신속한 답변을 받아보실 수 있습니다.',
   },
   {
     label: '안전 점검 실시',
-    imgPath: '/images/intro-1.png',
+    imgPath: '/images/first2.png',
     description: '안전 점검을 현장에서 직접 실시하고, 간편하고 직관적인 화면을 통해 음성, 텍스트로 점검 결과를 기록합니다.',
   },
   {
     label: '리포트 작성 및 결과 전송',
-    imgPath: '/images/intro-3.png',
+    imgPath: '/images/first3.png',
     description: '점검 결과를 리포트 형식 pdf로 변환, 카카오톡 오픈톡 기능을 통해 신속하게 결과를 공유할 수 있습니다.',
   },
 ];

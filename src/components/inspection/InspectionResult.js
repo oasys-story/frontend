@@ -894,7 +894,7 @@ const InspectionResult = () => {
               }
             }}
           >
-            문자
+            알림톡
           </Button>
 
           <Button
@@ -1150,7 +1150,7 @@ const InspectionResult = () => {
                 border: '1px solid #e0e0e0'
               }}
             >
-              bjh7340@naver.com
+              dawoo4850@naver.com
             </Typography>
           </Box>
           <DialogContentText sx={{ mb: 2 }}>

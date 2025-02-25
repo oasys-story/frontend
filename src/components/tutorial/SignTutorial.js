@@ -149,30 +149,29 @@ const ImageCarousel = ({ images }) => {
 // 각 스텝은 label, description, 그리고 해당 스텝의 이미지 배열(images)을 포함합니다.
 const tutorialSteps = [
   {
-    label: '알림톡 클릭',
-    description: '점검 결과페이지 하단에 \n \'알림톡\' 버튼을 클릭하여 \n 전송 화면으로 이동합니다.',
+    label: '현장에서 서명',
+    description: '현장에서 점검이 끝났다면 점검 결과표에 \n \'서명하기\' 버튼을 클릭합니다.',
     images: [
-      '/images/tk2.png',
+      '/images/sign.png',
     ],
   },
   {
-    label: '전송 설정',
-    description: '전송 받을 핸드폰 번호를 입력하고 \n 전송 버튼을 클릭합니다.',
+    label: '서명 패드',
+    description: '현장 관리자한테 점검 결과를 확인받고 \n 서명패드에 서명받습니다.',
     images: [
-      '/images/tk.png',
-      '/images/send-3.png',
+      '/images/sign2.png',
     ],
   },
   {
-    label: '알림톡 발송 완료',
-    description: '작성한 핸드폰 번호로 알림톡이 발송됩니다.',
+    label: '서명 확인',
+    description: '올바르게 입력되었는지 확인합니다.',
     images: [
-      '/images/send-4.png',
+      '/images/sign3.png',
     ],
   },
 ];
 
-const InspectionResultTransmissionTutorial = () => {
+const SignTutorial = () => {
   const [activeStep, setActiveStep] = useState(0);
   const navigate = useNavigate();
   const maxSteps = tutorialSteps.length;
@@ -272,4 +271,4 @@ const InspectionResultTransmissionTutorial = () => {
   );
 };
 
-export default InspectionResultTransmissionTutorial;
+export default SignTutorial;

@@ -177,7 +177,7 @@ const FireSafetyInspectionResult = () => {
       });
 
       if (response.ok) {
-        alert('문자가 전송되었습니다.');
+        alert('알림톡이 전송되었습니다.');
         setSmsDialogOpen(false);
         setPhoneNumber('');
       } else {
@@ -185,7 +185,7 @@ const FireSafetyInspectionResult = () => {
         throw new Error(error);
       }
     } catch (error) {
-      alert('문자 전송에 실패했습니다.');
+      alert('알림톡 전송에 실패했습니다.');
     } finally {
       setSending(false);
     }
@@ -536,7 +536,7 @@ const FireSafetyInspectionResult = () => {
               }
             }}
           >
-            문자
+            알림톡
           </Button>
 
           <Button
@@ -777,7 +777,7 @@ const FireSafetyInspectionResult = () => {
                 border: '1px solid #e0e0e0'
               }}
             >
-              bjh7340@naver.com
+              dawoo4850@naver.com
             </Typography>
           </Box>
           <DialogContentText sx={{ mb: 2 }}>

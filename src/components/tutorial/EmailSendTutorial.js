@@ -149,30 +149,43 @@ const ImageCarousel = ({ images }) => {
 // 각 스텝은 label, description, 그리고 해당 스텝의 이미지 배열(images)을 포함합니다.
 const tutorialSteps = [
   {
-    label: '알림톡 클릭',
-    description: '점검 결과페이지 하단에 \n \'알림톡\' 버튼을 클릭하여 \n 전송 화면으로 이동합니다.',
+    label: '이메일 전송',
+    description: '점검 결과페이지 하단에 \n \'이메일\' 버튼을 클릭하여 \n 입력 화면으로 이동합니다.',
     images: [
-      '/images/tk2.png',
+      '/images/email.png',
     ],
   },
   {
     label: '전송 설정',
-    description: '전송 받을 핸드폰 번호를 입력하고 \n 전송 버튼을 클릭합니다.',
+    description: '수신받을 이메일을 입력합니다. \n 단, 발송 이메일은 사전에 설정한 이메일로 발송됩니다.',
     images: [
-      '/images/tk.png',
-      '/images/send-3.png',
+      '/images/email2.png',
     ],
   },
   {
-    label: '알림톡 발송 완료',
-    description: '작성한 핸드폰 번호로 알림톡이 발송됩니다.',
+    label: '전송',
+    description: '작성한 이메일을 확인 후 전송 버튼을 클릭합니다.',
     images: [
-      '/images/send-4.png',
+      '/images/email3.png',
+    ],
+  },
+  {
+    label: '전송 확인',
+    description: '전송 완료메세지를 확인합니다.',
+    images: [
+      '/images/email4.png',
+    ],
+  },
+  {
+    label: '이메일 확인',
+    description: '입력한 수신 이메일로 전송 결과가 발송됩니다.',
+    images: [
+      '/images/email5.png',
     ],
   },
 ];
 
-const InspectionResultTransmissionTutorial = () => {
+const EmailSendTutorial = () => {
   const [activeStep, setActiveStep] = useState(0);
   const navigate = useNavigate();
   const maxSteps = tutorialSteps.length;
@@ -272,4 +285,4 @@ const InspectionResultTransmissionTutorial = () => {
   );
 };
 
-export default InspectionResultTransmissionTutorial;
+export default EmailSendTutorial;

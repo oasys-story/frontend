@@ -11,8 +11,10 @@ const OnboardingHome = () => {
     { id: 'electrical-inspection', title: '전기 점검 등록하기' },
     { id: 'fire-inspection', title: '소방 점검 등록하기' },
     { id: 'inquiry', title: '문의사항 등록하기' },
-    { id: 'send-results', title: '점검 결과 전송하기' },
+    { id: 'send-results', title: '점검 결과 전송하기(알림톡)' },
+    { id: 'email-send', title: '점검 결과 전송하기(이메일)'},
     { id: 'pdf', title: 'PDF 변환하기' },
+    { id: 'sign', title: '서명 받기'}
   ];
 
   const handleTopicClick = (id) => {

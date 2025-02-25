@@ -44,6 +44,8 @@ const PdfTutorial = React.lazy(() => import('./components/tutorial/PdfTutorial')
 const InspectionResultTransmissionTutorial = React.lazy(() => import('./components/tutorial/InspectionResultTransmissionTutorial'));
 const KakaoAlertList = React.lazy(() => import('./components/alert/KakaoAlertList'));
 const GuestInquiryList = React.lazy(() => import('./components/inquiry/GuestInquiryList'));
+const EmailSendTutorial = React.lazy(() => import('./components/tutorial/EmailSendTutorial'));
+const SignTutorial = React.lazy(() => import('./components/tutorial/SignTutorial'));
 
 // 로딩 컴포넌트
 const LoadingFallback = () => (
@@ -111,6 +113,8 @@ function App() {
                   <Route path="/tutorial/send-results" element={<InspectionResultTransmissionTutorial />} />
                   <Route path="/kakao-alert-list" element={<KakaoAlertList />} />
                   <Route path="/guest-inquiries" element={<GuestInquiryList />} />
+                  <Route path="/tutorial/email-send" element={<EmailSendTutorial />} />
+                  <Route path="/tutorial/sign" element={<SignTutorial />} />
                   <Route 
                     path="/admin/inquiries" 
                     element={
